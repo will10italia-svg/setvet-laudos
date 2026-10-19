@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Setvet - Sistema Diagnóstico & Confecção de Laudo</title>
+
+  <!-- Configuração PWA / Ícone na Tela Inicial -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0F5A47">
+
+  <!-- Fontes Google -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+  <!-- Framework CSS Tailwind e Bibliotecas Externas -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            vet: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#059669',
+              600: '#0F5A47',
+              700: '#0a3f32',
+              800: '#064e3b',
+              900: '#022c22'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root { --a4-scale: 1; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
+    ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+    .dark ::-webkit-scrollbar-thumb { background: #475569; }
+
+    body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; height: 100vh; overflow: hidden; }
+
+    #previewContainer, .a4-wrapper-scale {
+      user-select: none !important;
+      -webkit-user-select: none !important;
+    }
+
+    .page-a4, [contenteditable="true"] {
+      user-select: text !important;
+      -webkit-user-select: text !important;
+    }
+
+    [contenteditable="true"] {
+      cursor: text !important;
+      pointer-events: auto !important;
+      outline: none;
+    }
+
+    [contenteditable="true"]:focus {
+      outline: 1px dashed #10b981 !important;
+      background-color: rgba(16, 185, 129, 0.04) !important;
+      border-radius: 2px;
+    }
+
+    .a4-wrapper-scale {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+      transform: scale(var(--a4-scale, 1));
+      transform-origin: top center;
+      transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+      margin: 0 auto;
+      padding-bottom: 3rem;
+    }
+
+    .page-a4 {
+      background-color: #ffffff;
+      color: #1e293b;
+      width: 210mm;
+      height: 297mm;
+      padding: 15mm 15mm 18mm 15mm;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+      border-radius: 2px;
+      position: relative;
+      flex-shrink: 0;
+      box-sizing: border-box;
+      overflow: hidden;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    /* Marca d'água no fundo da página do laudo */
+    .page-a4::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 380px;
+      height: 380px;
+      background-image: url('image_5992ee00.jpg');
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: contain;
+      opacity: 0.05;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .dark .page-a4 { background-color: #18181b; color: #f4f4f5; }
+
+    .page-content { height: calc(297mm - 15mm - 18mm - 10mm); overflow: hidden; position: relative; z-index: 1; }
+
+    #previewContainer {
+      touch-action: pan-x pan-y;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      flex: 1 1 0%;
+      width: 100%;
+      height: 100%;
+      outline: none;
+    }
+
+    .laudo-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #0F5A47;
+      padding-bottom: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .dark .laudo-header { border-bottom-color: #34d399; }
+
+    .logo-cabecalho {
+      max-height: 45px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    .patient-card-clean {
+      background-color: transparent !important;
+      border: 1px solid #cbd5e1 !important;
+      border-radius: 6px;
+      padding: 0.65rem 0.85rem;
+      margin-bottom: 0.75rem;
+    }
+    .dark .patient-card-clean { border-color: #3f3f46 !important; }
+
+    .card-label { color: #64748b !important; font-weight: 700; font-size: 9px; text-transform: uppercase; display: block; }
+    .card-value { color: #1e293b !important; font-weight: 600; font-size: 0.82rem; }
+    .dark .card-value { color: #f4f4f5 !important; }
+
+    .a4-section-title {
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: #0F5A47;
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 3px;
+      margin-top: 10px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+    .dark .a4-section-title { color: #34d399; border-bottom-color: #27272a; }
+
+    .a4-organ-item {
+      margin-bottom: 6px;
+      font-size: 0.82rem;
+      line-height: 1.45;
+      background-color: transparent !important;
+    }
+
+    .a4-organ-name { font-weight: bold; color: #0F5A47; display: inline; cursor: pointer; outline: none; }
+    .dark .a4-organ-name { color: #34d399; }
+    .a4-organ-name:hover { text-decoration: underline; }
+
+    .a4-organ-content { display: inline; background-color: transparent !important; }
+
+    .general-phrase-item {
+      margin-bottom: 4px;
+      font-size: 0.82rem;
+      line-height: 1.45;
+      color: #1e293b;
+      background-color: transparent !important;
+    }
+    .dark .general-phrase-item { color: #f4f4f5 !important; }
+
+    .achado-adicional-highlight {
+      border-left: 2px solid #10b981 !important;
+      background-color: transparent !important;
+      color: #334155 !important;
+      padding: 2px 0px 2px 8px !important;
+      margin-top: 2px !important;
+      margin-bottom: 4px !important;
+      font-size: 0.80rem;
+      line-height: 1.4;
+      font-weight: 400;
+    }
+    .dark .achado-adicional-highlight {
+      border-left-color: #34d399 !important;
+      color: #e4e4e7 !important;
+    }
+
+    .ref-text {
+      display: block !important;
+      margin-top: 2px;
+      margin-bottom: 2px;
+      font-size: 0.70rem;
+      line-height: 1.2;
+      font-family: 'JetBrains Mono', monospace;
+      color: #94a3b8;
+      background-color: transparent !important;
+      border: none !important;
+      font-weight: 400;
+      transition: color 0.2s ease;
+    }
+    
+    .ref-text.is-alert, 
+    .ref-text.alerta-vermelho,
+    .ref-text .alerta-vermelho {
+      color: #ef4444 !important;
+      font-weight: 600;
+    }
+
+    .dark .ref-text { color: #71717a; }
+    .dark .ref-text.is-alert, 
+    .dark .ref-text.alerta-vermelho,
+    .dark .ref-text .alerta-vermelho { color: #f87171 !important; }
+
+    .gallery-grid-2x3 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; width: 100%; }
+    .gallery-item-a4 {
+      background-color: transparent;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .dark .gallery-item-a4 { border-color: #27272a; }
+
+    .image-wrapper-a4 {
+      width: 100%;
+      height: 58mm;
+      background-color: #000000;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .image-wrapper-a4 img { width: 100%; height: 100%; object-fit: contain; }
+
+    .signature-container { margin-top: 25px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .signature-line { width: 220px; border-top: 1px solid #1e293b; margin-bottom: 4px; }
+    .dark .signature-line { border-top-color: #f4f4f5; }
+
+    .a4-footer {
+      position: absolute;
+      bottom: 8mm;
+      left: 15mm;
+      right: 15mm;
+      border-top: 1px solid #cbd5e1;
+      padding-top: 4px;
+      font-size: 0.7rem;
+      color: #64748b;
+      display: flex;
+      justify-content: flex-end;
+      z-index: 1;
+    }
+    .dark .a4-footer { border-top-color: #27272a; color: #a1a1aa; }
+
+    aside#appSidebar.sidebar-collapsed {
+      width: 0 !important;
+      min-width: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      border: none !important;
+    }
+
+    @page { size: A4 portrait; margin: 0mm !important; }
+    @media print {
+      body, html { background: #ffffff !important; overflow: visible !important; height: auto !important; width: 210mm !important; }
+      header, nav, aside, #zoomControlFloating, .no-print { display: none !important; }
+      main, #previewContainer { background: #ffffff !important; padding: 0 !important; margin: 0 !important; overflow: visible !important; width: 210mm !important; }
+      .a4-wrapper-scale { transform: none !important; padding-bottom: 0 !important; }
+      .page-a4 { box-shadow: none !important; margin: 0 !important; width: 210mm !important; height: 297mm !important; page-break-after: always !important; }
+    }
+  </style>
+</head>
+<body class="bg-slate-100 dark:bg-zinc-950 text-slate-800 dark:text-zinc-100 h-screen flex flex-col transition-colors duration-300 overflow-hidden">
+
+  <!-- CABEÇALHO DA APLICAÇÃO -->
+  <header class="bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 sticky top-0 z-30 shadow-sm shrink-0">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
+      
+      <div class="flex items-center gap-3 shrink-0">
+        <img src="image_5992ee00.jpg" alt="Setvet Diagnóstico Veterinário" class="logo-cabecalho">
+      </div>
+
+      <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+        <div class="hidden md:flex items-center gap-2 text-xs font-semibold bg-slate-50 dark:bg-zinc-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-700">
+          <span class="text-slate-400 dark:text-zinc-500">Arquivo:</span>
+          <span id="label-filename" class="font-mono text-vet-600 dark:text-emerald-400 truncate max-w-[200px]">Laudo_Thor.pdf</span>
+          <span class="text-slate-300 dark:text-zinc-600">|</span>
+          <button id="report-status-badge" onclick="AppInterface.toggleStatusSalvo()" class="shrink-0 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-800 transition-colors">
+            Rascunho
+          </button>
+        </div>
+
+        <a href="../historico/laudos_salvos.html" class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-300 dark:hover:bg-zinc-700 transition-all shadow-sm shrink-0">
+          <i data-lucide="folder-archive" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Laudos Salvos</span>
+        </a>
+
+        <button onclick="salvarLaudoAtualNaGaleria()" class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-sm shrink-0" title="Salvar no Histórico">
+          <i data-lucide="save" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Salvar</span>
+        </button>
+
+        <button onclick="sharePdf()" class="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-vet-600 hover:bg-vet-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white transition-all shadow-sm shrink-0">
+          <i data-lucide="printer" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Imprimir / Salvar PDF</span>
+          <span class="sm:hidden">PDF</span>
+        </button>
+
+        <button onclick="AppInterface.toggleDarkMode()" class="p-2 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 hover:border-vet-600 dark:hover:border-emerald-400 transition-colors shrink-0" title="Alternar Modo Escuro">
+          <i data-lucide="sun" class="w-4 h-4 hidden dark:block"></i>
+          <i data-lucide="moon" class="w-4 h-4 block dark:hidden"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- NAVEGAÇÃO DE ABAS -->
+  <nav id="topTabBar" class="bg-slate-200/90 dark:bg-zinc-800/90 border-b border-slate-300 dark:border-zinc-700 px-3 sm:px-6 py-2 shrink-0 overflow-x-auto no-scrollbar z-20">
+    <div class="max-w-7xl mx-auto flex items-center justify-between min-w-max gap-3">
+      
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <button onclick="AppInterface.clickTopTab('paciente')" id="tab-btn-paciente" class="top-tab-btn flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-white dark:bg-zinc-900 text-vet-600 dark:text-emerald-400 shadow-sm border border-slate-200 dark:border-zinc-700">
+          <i data-lucide="user" class="w-4 h-4"></i>
+          <span>1. Paciente & Dados</span>
+        </button>
+
+        <button onclick="AppInterface.clickTopTab('figado')" id="tab-btn-figado" class="top-tab-btn flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-slate-100 dark:bg-zinc-800/60 text-slate-600 dark:text-zinc-400 hover:bg-white dark:hover:bg-zinc-900">
+          <i data-lucide="heart-pulse" class="w-4 h-4 text-emerald-500"></i>
+          <span>2. Configurador de Órgão</span>
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        </button>
+
+        <button onclick="AppInterface.clickTopTab('galeria')" id="tab-btn-galeria" class="top-tab-btn flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-slate-100 dark:bg-zinc-800/60 text-slate-600 dark:text-zinc-400 hover:bg-white dark:hover:bg-zinc-900">
+          <i data-lucide="images" class="w-4 h-4"></i>
+          <span>3. Galeria de Imagens</span>
+          <span id="tab-photo-count" class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 dark:bg-zinc-700 text-slate-700 dark:text-zinc-300">0</span>
+        </button>
+
+        <button onclick="AppInterface.clickTopTab('frases')" id="tab-btn-frases" class="top-tab-btn flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-slate-100 dark:bg-zinc-800/60 text-slate-600 dark:text-zinc-400 hover:bg-white dark:hover:bg-zinc-900">
+          <i data-lucide="file-text" class="w-4 h-4"></i>
+          <span>4. Frases & Obs</span>
+        </button>
+      </div>
+
+    </div>
+  </nav>
+
+  <div class="flex-1 flex overflow-hidden relative">
+    
+    <!-- PAINEL LATERAL ESQUERDO -->
+    <aside id="appSidebar" class="relative w-80 sm:w-96 bg-white dark:bg-zinc-900 border-r border-slate-200 dark:border-zinc-800 flex flex-col h-full z-20 transition-all duration-300 ease-in-out shrink-0">
+
+      <button onclick="AppInterface.togglePanelCollapse()" id="btn-toggle-sidebar-edge" title="Recolher/Expandir Painel" class="absolute -right-3.5 top-4 z-30 w-7 h-7 bg-white dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-full shadow-md flex items-center justify-center text-slate-600 dark:text-zinc-300 hover:bg-vet-50 dark:hover:bg-zinc-700 hover:text-vet-600 transition-all">
+        <i data-lucide="chevron-left" id="icon-sidebar-toggle" class="w-4 h-4"></i>
+      </button>
+
+      <div class="p-4 overflow-y-auto flex-1 space-y-4">
+
+        <!-- ABA 1: PACIENTE & DADOS -->
+        <div id="tab-content-paciente" class="tab-panel-body space-y-3">
+          <div class="border-b border-slate-200 dark:border-zinc-800 pb-2">
+            <h2 class="text-xs font-bold text-vet-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+              <i data-lucide="user-check" class="w-4 h-4"></i> Identificação do Paciente
+            </h2>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Paciente</label>
+              <input type="text" id="p-paciente" value="Thor" oninput="MotorLaudo.atualizarPaginasLaudo()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-vet-600">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">ID / Prontuário</label>
+              <input type="text" id="p-idAnimal" value="2026-0012" oninput="MotorLaudo.atualizarPaginasLaudo()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs font-mono focus:outline-none focus:border-vet-600">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Espécie</label>
+              <select id="p-especie" onchange="AppInterface.handleEspecieChange()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-vet-600">
+                <option value="Canino" selected>Canino</option>
+                <option value="Felino">Felino</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Raça</label>
+              <div class="flex gap-1">
+                <select id="p-raca" onchange="MotorLaudo.atualizarPaginasLaudo()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-vet-600">
+                  <optgroup label="Caninos">
+                    <option value="SRD (Canino)">SRD</option>
+                    <option value="Shih Tzu" selected>Shih Tzu</option>
+                    <option value="Poodle">Poodle</option>
+                    <option value="Yorkshire Terrier">Yorkshire</option>
+                    <option value="Bulldog Francês">Bulldog</option>
+                    <option value="Golden Retriever">Golden</option>
+                  </optgroup>
+                  <optgroup label="Felinos">
+                    <option value="SRD (Felino)">SRD (Felino)</option>
+                    <option value="Persa">Persa</option>
+                    <option value="Siamês">Siamês</option>
+                  </optgroup>
+                </select>
+                <button type="button" onclick="AppInterface.addNovaRaca()" class="px-2 bg-slate-200 dark:bg-zinc-700 hover:bg-slate-300 rounded-lg text-xs font-bold">+</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Sexo</label>
+              <select id="p-sexo" onchange="AppInterface.handleSexoChange()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-vet-600">
+                <option value="Macho" selected>Macho</option>
+                <option value="Fêmea">Fêmea</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Idade</label>
+              <div class="flex items-center gap-1 text-xs">
+                <input type="text" id="p-idadeAnos" value="3" oninput="MotorLaudo.atualizarPaginasLaudo()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg p-1.5 text-center"> a
+                <input type="text" id="p-idadeMeses" value="6" oninput="MotorLaudo.atualizarPaginasLaudo()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg p-1.5 text-center"> m
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Porte</label>
+              <select id="p-porte" onchange="MotorLaudo.atualizarPaginasLaudo()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-vet-600">
+                <option value="Cão P" selected>Cão P</option>
+                <option value="Cão M">Cão M</option>
+                <option value="Cão G">Cão G</option>
+                <option value="Felino">Felino</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Reprodutivo</label>
+              <select id="p-statusReprodutivo" onchange="MotorLaudo.atualizarPaginasLaudo()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-vet-600">
+                <option value="Castrado" selected>Castrado</option>
+                <option value="Inteiro">Não Castrado</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Tutor (Responsável)</label>
+            <input type="text" id="p-responsavel" value="Carlos Eduardo" oninput="MotorLaudo.atualizarPaginasLaudo()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-vet-600">
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Requisitante</label>
+              <input type="text" id="p-requisitante" value="Dr(a). Requisitante" oninput="MotorLaudo.atualizarPaginasLaudo()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-vet-600">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Data / Hora</label>
+              <input type="datetime-local" id="p-dataExame" onchange="MotorLaudo.atualizarPaginasLaudo()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-1.5 py-1.5 text-[11px] focus:outline-none focus:border-vet-600">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Clínica Parceira</label>
+            <input type="text" id="p-clinica" value="Clínica Veterinária Parceira" oninput="MotorLaudo.atualizarPaginasLaudo()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-vet-600">
+          </div>
+        </div>
+
+        <!-- ABA 2: CONFIGURADOR DINÂMICO DE ÓRGÃO -->
+        <div id="tab-content-figado" class="tab-panel-body space-y-4 hidden">
+          <div class="bg-slate-100 dark:bg-zinc-800 p-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 space-y-2">
+            <label class="block text-[10px] font-bold text-slate-500 uppercase">Selecione o Órgão para Configurar:</label>
+            <select id="seletor-orgao-ativo" onchange="PainelConfigurador.trocarOrgaoAtivo(this.value)" class="w-full bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-lg p-2 text-xs font-bold text-vet-600 dark:text-emerald-400 focus:outline-none">
+            </select>
+            <button type="button" onclick="PainelConfigurador.adicionarOrgaoAdicional()" class="w-full py-2 px-3 bg-slate-200 dark:bg-zinc-700 hover:bg-slate-300 dark:hover:bg-zinc-600 text-slate-800 dark:text-zinc-100 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1">
+              <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+              <span>Adicionar Órgão / Estrutura Adicional</span>
+            </button>
+          </div>
+
+          <div id="container-orgao-dinamico" class="space-y-4">
+          </div>
+        </div>
+
+        <!-- ABA 3: GALERIA DE IMAGENS -->
+        <div id="tab-content-galeria" class="tab-panel-body hidden space-y-3">
+          <div class="border-b border-slate-200 dark:border-zinc-800 pb-2">
+            <h2 class="text-xs font-bold text-vet-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+              <i data-lucide="images" class="w-4 h-4"></i> Galeria de Fotos (2x3)
+            </h2>
+          </div>
+
+          <input type="file" id="fileInputGallery" accept="image/*" multiple class="hidden" onchange="GerenciadorGaleria.tratarUpload(event)">
+          
+          <div id="dropzoneGallery" 
+               onclick="document.getElementById('fileInputGallery').click()" 
+               ondragover="GerenciadorGaleria.handleDragOver(event)" 
+               ondragleave="GerenciadorGaleria.handleDragLeave(event)" 
+               ondrop="GerenciadorGaleria.handleDrop(event)" 
+               class="border-2 border-dashed border-slate-300 dark:border-zinc-700 hover:border-vet-600 dark:hover:border-emerald-400 rounded-xl p-5 text-center cursor-pointer bg-slate-50 dark:bg-zinc-800/50 hover:bg-vet-50 dark:hover:bg-zinc-800 transition-all flex flex-col items-center gap-2">
+            <i data-lucide="image-plus" class="w-7 h-7 text-vet-600 dark:text-emerald-400"></i>
+            <span class="text-xs font-bold text-slate-700 dark:text-zinc-200">Adicionar Fotos do Exame</span>
+            <span class="text-[10px] text-slate-400">Arraste e solte imagens ou clique para procurar</span>
+          </div>
+
+          <div class="text-[11px] font-semibold text-slate-500 dark:text-zinc-400 flex items-center justify-between pt-2 border-t border-slate-100 dark:border-zinc-800">
+            <span>Imagens no Laudo:</span>
+            <span id="galeria-count-badge" class="font-mono text-vet-600 dark:text-emerald-400 font-bold">0 foto(s)</span>
+          </div>
+
+          <div id="sidebar-photos-list" class="space-y-2 max-h-80 overflow-y-auto pr-1">
+          </div>
+        </div>
+
+        <!-- ABA 4: FRASES E OBSERVAÇÕES GERAIS -->
+        <div id="tab-content-frases" class="tab-panel-body hidden space-y-3">
+          <div class="border-b border-slate-200 dark:border-zinc-800 pb-2">
+            <h2 class="text-xs font-bold text-vet-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+              <i data-lucide="file-text" class="w-4 h-4"></i> Frases e Observações Gerais
+            </h2>
+          </div>
+
+          <div class="space-y-2 pt-1">
+            <div class="p-2.5 bg-slate-50 dark:bg-zinc-800/50 rounded-xl border border-slate-200 dark:border-zinc-800 hover:border-slate-300">
+              <label class="flex items-start gap-2.5 text-xs font-medium cursor-pointer">
+                <input type="checkbox" id="chk-obs-hist" onchange="MotorLaudo.atualizarPaginasLaudo()" class="mt-0.5 accent-vet-600 w-4 h-4 rounded">
+                <span>OBS: Avaliação histológica recomendada</span>
+              </label>
+            </div>
+
+            <div class="p-2.5 bg-slate-50 dark:bg-zinc-800/50 rounded-xl border border-slate-200 dark:border-zinc-800 hover:border-slate-300">
+              <label class="flex items-start gap-2.5 text-xs font-medium cursor-pointer">
+                <input type="checkbox" id="chk-linfo" onchange="MotorLaudo.atualizarPaginasLaudo()" class="mt-0.5 accent-vet-600 w-4 h-4 rounded">
+                <span>Linfonodos sem alterações visibilizadas</span>
+              </label>
+            </div>
+
+            <div class="p-2.5 bg-slate-50 dark:bg-zinc-800/50 rounded-xl border border-slate-200 dark:border-zinc-800 hover:border-slate-300 space-y-2">
+              <label class="flex items-start gap-2.5 text-xs font-medium cursor-pointer">
+                <input type="checkbox" id="chk-liquido" checked onchange="AppInterface.toggleLiquidoSubmenu(); MotorLaudo.atualizarPaginasLaudo()" class="mt-0.5 accent-vet-600 w-4 h-4 rounded">
+                <span>Líquido Livre Abdominal</span>
+              </label>
+              
+              <div id="wrapper-liquido-dropdown" class="pl-6 pt-1">
+                <select id="sel-liquido-qtd" onchange="MotorLaudo.atualizarPaginasLaudo()" class="w-full bg-white dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-lg p-2 text-xs font-medium focus:outline-none focus:border-vet-600">
+                  <option value="nenhum" selected>Sem líquido livre</option>
+                  <option value="discreta">Discreta quantidade</option>
+                  <option value="moderada">Moderada quantidade</option>
+                  <option value="acentuada">Acentuada quantidade</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="p-2.5 bg-slate-50 dark:bg-zinc-800/50 rounded-xl border border-slate-200 dark:border-zinc-800 hover:border-slate-300">
+              <label class="flex items-start gap-2.5 text-xs font-medium cursor-pointer">
+                <input type="checkbox" id="chk-vasos" checked onchange="MotorLaudo.atualizarPaginasLaudo()" class="mt-0.5 accent-vet-600 w-4 h-4 rounded">
+                <span>Grandes vasos abdominais preservados</span>
+              </label>
+            </div>
+
+            <div class="p-2.5 bg-slate-50 dark:bg-zinc-800/50 rounded-xl border border-slate-200 dark:border-zinc-800 hover:border-slate-300">
+              <label class="flex items-start gap-2.5 text-xs font-medium cursor-pointer">
+                <input type="checkbox" id="chk-qualidade" onchange="MotorLaudo.atualizarPaginasLaudo()" class="mt-0.5 accent-vet-600 w-4 h-4 rounded">
+                <span>Qualidade técnica prejudicada</span>
+              </label>
+            </div>
+
+            <div class="p-2.5 bg-slate-50 dark:bg-zinc-800/50 rounded-xl border border-slate-200 dark:border-zinc-800 hover:border-slate-300">
+              <label class="flex items-start gap-2.5 text-xs font-medium cursor-pointer">
+                <input type="checkbox" id="chk-valor" checked onchange="MotorLaudo.atualizarPaginasLaudo()" class="mt-0.5 accent-vet-600 w-4 h-4 rounded">
+                <span>Valor preditivo e restrições legais</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- ÁREA CINZA DE PRÉ-VISUALIZAÇÃO DE LAUDO -->
+    <main tabindex="0" id="previewContainer" class="p-6 sm:p-8 bg-slate-600 dark:bg-zinc-900 flex flex-col items-center cursor-default flex-1 w-full h-full">
+      <div id="a4WrapperScale" class="a4-wrapper-scale" style="--a4-scale: 1.00;">
+      </div>
+    </main>
+
+    <!-- CONTROLE FLUTUANTE DE ZOOM -->
+    <div id="zoomControlFloating" class="fixed bottom-4 right-4 z-40 bg-white/90 dark:bg-zinc-800/90 backdrop-blur-md border border-slate-300 dark:border-zinc-700 rounded-full shadow-xl p-1.5 flex items-center gap-1.5 text-xs font-semibold">
+      <button onclick="ControleZoom.zoomOut()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-700 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-zinc-600 transition-colors text-slate-700 dark:text-zinc-200 font-bold" title="Diminuir Zoom">-</button>
+      <button onclick="ControleZoom.resetZoom()" id="zoom-level-text" class="px-2 text-[11px] font-mono text-slate-700 dark:text-zinc-300 hover:underline" title="Redefinir Zoom">100%</button>
+      <button onclick="ControleZoom.zoomIn()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-zinc-700 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-zinc-600 transition-colors text-slate-700 dark:text-zinc-200 font-bold" title="Aumentar Zoom">+</button>
+    </div>
+
+  </div>
+
+  <!-- SCRIPTS EXTERNOS DE ÓRGÃOS -->
+  <script src="js/abdominal/orgaos/figado.js"></script>
+  <script src="js/abdominal/orgaos/vesicula.js"></script>
+  <script src="js/abdominal/orgaos/estomago.js"></script>
+  <script src="js/abdominal/orgaos/alcas.js"></script>
+  <script src="js/abdominal/orgaos/baco.js"></script>
+  <script src="js/abdominal/orgaos/rins.js"></script>
+  <script src="js/abdominal/orgaos/vesicula_urinaria.js"></script>
+  <script src="js/abdominal/orgaos/uretra.js"></script>
+  <script src="js/abdominal/orgaos/pancreas.js"></script>
+  <script src="js/abdominal/orgaos/adrenais.js"></script>
+  <script src="js/abdominal/orgaos/prostata.js"></script>
+  <script src="js/abdominal/orgaos/testiculo.js"></script>
+  <script src="js/abdominal/orgaos/ovarios.js"></script>
+  <script src="js/abdominal/orgaos/utero.js"></script>
+  <script src="js/abdominal/orgaos/linfonodos.js"></script>
+
+  <!-- SCRIPTS AUXILIARES E PRINCIPAL -->
+  <script src="js/abdominal/painel.ab.js"></script>
+  <script src="js/galeria.js"></script>
+  <script src="js/script.js"></script>
+</body>
+</html>
