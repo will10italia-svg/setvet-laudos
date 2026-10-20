@@ -53,7 +53,6 @@ const EstadoApp = {
   ]
 };
 
-// Auxiliar para verificar restrição de sexo por ID de órgão
 function orgaoEhIncompativelComSexo(idOrgao, sexoAtual) {
   const idNormalizado = String(idOrgao).toLowerCase();
   
@@ -853,6 +852,7 @@ async function carregarLaudoParaEdicao() {
   }
 }
 
+// CORREÇÃO CRÍTICA DO PDF EM DISPOSITIVOS MÓVEIS (SEM DEPENDER DE IMAGENS EXTERNAS)
 async function sharePdf() {
   const container = document.getElementById('a4WrapperScale');
   if (!container) return;
@@ -861,6 +861,27 @@ async function sharePdf() {
 
   try {
     const clone = container.cloneNode(true);
+
+    // Reseta escala de pré-visualização móvel no clone para A4 100%
+    clone.style.setProperty('--a4-scale', '1.0');
+    clone.style.transform = 'none';
+    clone.style.width = '210mm';
+    clone.style.margin = '0';
+    clone.style.padding = '0';
+
+    // Garante estilo impresso profissional (papel branco e texto escuro)
+    const paginasClone = clone.querySelectorAll('.page-a4');
+    paginasClone.forEach(p => {
+      p.style.backgroundColor = '#ffffff';
+      p.style.color = '#1e293b';
+      p.style.transform = 'none';
+      p.style.boxShadow = 'none';
+      p.style.margin = '0';
+      p.querySelectorAll('*').forEach(el => {
+        el.style.color = ''; 
+      });
+    });
+
     clone.querySelectorAll('.no-print, .delete-photo-btn').forEach(el => el.remove());
 
     const tempContainer = document.createElement('div');
@@ -876,7 +897,13 @@ async function sharePdf() {
       margin: [0, 0, 0, 0],
       filename: filename,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        windowWidth: 794
+      },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
@@ -895,7 +922,6 @@ async function sharePdf() {
   }
 }
 
-// Controle de Zoom, Arrastar (Pan) e Toque (Pinch-to-Zoom)
 const ControleZoom = {
   escala: 1.0,
   isDragging: false,
@@ -907,10 +933,10 @@ const ControleZoom = {
 
   obterEscalaInicial: function() {
     const larguraEcra = window.innerWidth;
-    if (larguraEcra <= 480) return 0.52;  // Telemóveis pequenos
-    if (larguraEcra <= 768) return 0.60;  // Telemóveis verticais
-    if (larguraEcra <= 1024) return 0.75; // Tablets
-    return 1.0;                           // Computadores
+    if (larguraEcra <= 480) return 0.52;
+    if (larguraEcra <= 768) return 0.60;
+    if (larguraEcra <= 1024) return 0.75;
+    return 1.0;
   },
 
   ajustarZoomInicial: function() {
@@ -949,7 +975,6 @@ const ControleZoom = {
     const container = document.getElementById('previewContainer');
     if (!container) return;
 
-    // --- MOUSE DRAG (Desktop Pan) ---
     container.addEventListener('mousedown', (e) => {
       if (e.target.closest('.page-a4') && !e.target.closest('[contenteditable="true"]')) {
         this.isDragging = true;
@@ -973,7 +998,6 @@ const ControleZoom = {
       this.isDragging = false;
     });
 
-    // --- TOUCH GESTURES (Mobile / Tablet Pinch & Pan) ---
     container.addEventListener('touchstart', (e) => {
       if (e.touches.length === 1) {
         if (!e.target.closest('[contenteditable="true"]')) {
@@ -1100,5 +1124,5 @@ window.onload = function() {
   }
   MotorLaudo.atualizarPaginasLaudo();
   ControleZoom.ajustarZoomInicial();
-  ControleZoom.initTouchAndDrag(); // Ativa suporte completo a toque e arrasto
+  ControleZoom.initTouchAndDrag();
 };
