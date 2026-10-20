@@ -1,11 +1,28 @@
-/**
- * Setvet - Sistema Diagnóstico & Confecção de Laudo
- * Arquivo: script.js (Código Principal Atualizado)
- */
+// Configuração do Tema Tailwind
+tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        vet: {
+          50: '#ecfdf5',
+          100: '#d1fae5',
+          500: '#059669',
+          600: '#0F5A47',
+          700: '#0a3f32',
+          800: '#064e3b',
+          900: '#022c22'
+        }
+      },
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace']
+      }
+    }
+  }
+};
 
-function initIcons() { 
-  if (window.lucide) lucide.createIcons(); 
-}
+function initIcons() { if (window.lucide) lucide.createIcons(); }
 
 const CONFIGURACAO_ORGAOS = window.CONFIGURACAO_ORGAOS || {};
 
@@ -41,16 +58,17 @@ function orgaoEhIncompativelComSexo(idOrgao, sexoAtual) {
   const idNormalizado = String(idOrgao).toLowerCase();
   
   if (sexoAtual === 'Fêmea') {
-    if (idNormalizado.includes('testic') || idNormalizado.includes('prostat')) return true;
+    if (idNormalizado.includes('testic') || idNormalizado.includes('prostat')) {
+      return true;
+    }
   } else if (sexoAtual === 'Macho') {
-    if (idNormalizado.includes('ovari') || idNormalizado.includes('uter')) return true;
+    if (idNormalizado.includes('ovari') || idNormalizado.includes('uter')) {
+      return true;
+    }
   }
   return false;
 }
 
-// =========================================================
-// PAINEL CONFIGURADOR DE ÓRGÃOS E PATOLOGIAS
-// =========================================================
 const PainelConfigurador = {
   inicializarSeletor: function() {
     const select = document.getElementById('seletor-orgao-ativo');
@@ -67,7 +85,9 @@ const PainelConfigurador = {
     const ativoValido = idsValidos.includes(EstadoApp.orgaoConfigAtivo) ||
                         EstadoApp.orgaosAdicionais.some(oa => oa.id === EstadoApp.orgaoConfigAtivo);
 
-    if (!ativoValido) EstadoApp.orgaoConfigAtivo = 'figado';
+    if (!ativoValido) {
+      EstadoApp.orgaoConfigAtivo = 'figado';
+    }
 
     let optionsHTML = orgaosCompativeis.map(([chave, o]) => `
       <option value="${o.id || chave}">${o.icone || '🩺'} ${o.nome}</option>
@@ -104,7 +124,13 @@ const PainelConfigurador = {
     if (!nome || nome.trim() === '') return;
 
     const id = 'adicional_' + Date.now();
-    EstadoApp.orgaosAdicionais.push({ id, nome: nome.trim(), texto: 'Sem alterações dignas de nota.' });
+    const novoOrgao = {
+      id: id,
+      nome: nome.trim(),
+      texto: 'Sem alterações dignas de nota.'
+    };
+
+    EstadoApp.orgaosAdicionais.push(novoOrgao);
     this.inicializarSeletor();
     this.trocarOrgaoAtivo(id);
     MotorLaudo.atualizarPaginasLaudo();
@@ -145,16 +171,24 @@ const PainelConfigurador = {
     let html = `
       <div class="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 rounded-xl p-3 flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <div class="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">${orgao.icone || '🩺'}</div>
+          <div class="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">
+            ${orgao.icone || '🩺'}
+          </div>
           <div>
             <h3 class="text-xs font-bold text-emerald-900 dark:text-emerald-300">Editar: ${orgao.nome}</h3>
             <p class="text-[10px] text-emerald-700 dark:text-emerald-400">Parâmetros e patologias</p>
           </div>
         </div>
+
         <div class="flex items-center gap-2">
-          <button onclick="PainelConfigurador.resetar('${orgao.id}')" class="text-[10px] font-bold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1"><i data-lucide="rotate-ccw" class="w-3 h-3"></i> Resetar</button>
+          <button onclick="PainelConfigurador.resetar('${orgao.id}')" class="text-[10px] font-bold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1">
+            <i data-lucide="rotate-ccw" class="w-3 h-3"></i> Resetar
+          </button>
           <span class="text-slate-300 dark:text-zinc-600">|</span>
-          <button onclick="PainelConfigurador.toggleOcultar('${orgao.id}')" class="text-[10px] font-bold ${orgao.oculto ? 'text-emerald-600' : 'text-red-600'} hover:underline flex items-center gap-1"><i data-lucide="${orgao.oculto ? 'eye' : 'eye-off'}" class="w-3 h-3"></i> <span>${orgao.oculto ? 'Exibir' : 'Ocultar'}</span></button>
+          <button onclick="PainelConfigurador.toggleOcultar('${orgao.id}')" class="text-[10px] font-bold ${orgao.oculto ? 'text-emerald-600' : 'text-red-600'} hover:underline flex items-center gap-1">
+            <i data-lucide="${orgao.oculto ? 'eye' : 'eye-off'}" class="w-3 h-3"></i> 
+            <span>${orgao.oculto ? 'Exibir no Laudo' : 'Ocultar do Laudo'}</span>
+          </button>
         </div>
       </div>
       <div class="space-y-3">
@@ -168,40 +202,103 @@ const PainelConfigurador = {
         const label = (orgao.labels && orgao.labels[campoKey]) || campoKey;
 
         if (typeof val === 'boolean') {
-          html += `<div class="p-2.5 bg-slate-50 dark:bg-zinc-800/80 rounded-xl border border-slate-200 dark:border-zinc-700"><label class="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-zinc-200 cursor-pointer"><input type="checkbox" ${val ? 'checked' : ''} onchange="PainelConfigurador.atualizarCampo('${orgao.id}', '${campoKey}', this.checked)" class="accent-emerald-600 w-4 h-4 rounded"><span>${label}</span></label></div>`;
+          html += `
+            <div class="p-2.5 bg-slate-50 dark:bg-zinc-800/80 rounded-xl border border-slate-200 dark:border-zinc-700">
+              <label class="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-zinc-200 cursor-pointer">
+                <input type="checkbox" ${val ? 'checked' : ''} onchange="PainelConfigurador.atualizarCampo('${orgao.id}', '${campoKey}', this.checked)" class="accent-emerald-600 w-4 h-4 rounded">
+                <span>${label}</span>
+              </label>
+            </div>
+          `;
         } else if (orgao.options && orgao.options[campoKey]) {
           const opts = orgao.options[campoKey];
-          html += `<div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">${label}</label><select onchange="PainelConfigurador.atualizarCampo('${orgao.id}', '${campoKey}', this.value)" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg p-2 text-xs font-semibold dark:text-zinc-200">${opts.map(opt => { const optVal = typeof opt === 'object' ? opt.value : opt; const optLabel = typeof opt === 'object' ? opt.label : opt; return `<option value="${optVal}" ${val === optVal ? 'selected' : ''}>${optLabel}</option>`; }).join('')}</select></div>`;
+          html += `
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">${label}</label>
+              <select onchange="PainelConfigurador.atualizarCampo('${orgao.id}', '${campoKey}', this.value)" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg p-2 text-xs font-semibold dark:text-zinc-200">
+                ${opts.map(opt => {
+                  const optVal = typeof opt === 'object' ? opt.value : opt;
+                  const optLabel = typeof opt === 'object' ? opt.label : opt;
+                  return `<option value="${optVal}" ${val === optVal ? 'selected' : ''}>${optLabel}</option>`;
+                }).join('')}
+              </select>
+            </div>
+          `;
         } else if (typeof val === 'string') {
-          html += `<div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">${label}</label><input type="text" value="${val}" oninput="PainelConfigurador.atualizarCampo('${orgao.id}', '${campoKey}', this.value)" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg p-2 text-xs font-semibold dark:text-zinc-200"></div>`;
+          html += `
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">${label}</label>
+              <input type="text" value="${val}" oninput="PainelConfigurador.atualizarCampo('${orgao.id}', '${campoKey}', this.value)" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg p-2 text-xs font-semibold dark:text-zinc-200">
+            </div>
+          `;
         }
       });
     }
+
     html += `</div>`;
 
     if (orgao.chipsPatologias && orgao.chipsPatologias.length > 0) {
-      html += `<div class="space-y-2 pt-2 border-t border-slate-200 dark:border-zinc-800"><label class="block text-[11px] font-bold text-slate-600 dark:text-zinc-300">Achados Adicionais / Patologias</label><div class="flex flex-wrap gap-1.5">${orgao.chipsPatologias.map(chip => { const isSel = orgao.chipsSelecionados.includes(chip.id); return `<button type="button" onclick="PainelConfigurador.toggleChip('${orgao.id}', '${chip.id}')" class="px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${isSel ? 'border-emerald-500 bg-emerald-100 text-emerald-900 dark:bg-emerald-950/80 dark:text-emerald-200' : 'border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200'}">${isSel ? '✓ ' : '+ '} ${chip.rotulo}</button>`; }).join('')}</div></div>`;
+      html += `
+        <div class="space-y-2 pt-2 border-t border-slate-200 dark:border-zinc-800">
+          <label class="block text-[11px] font-bold text-slate-600 dark:text-zinc-300">Achados Adicionais / Patologias</label>
+          <div class="flex flex-wrap gap-1.5">
+            ${orgao.chipsPatologias.map(chip => {
+              const isSel = orgao.chipsSelecionados.includes(chip.id);
+              return `
+                <button type="button" onclick="PainelConfigurador.toggleChip('${orgao.id}', '${chip.id}')" class="px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${isSel ? 'border-emerald-500 bg-emerald-100 text-emerald-900 dark:bg-emerald-950/80 dark:text-emerald-200' : 'border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200'}">
+                  ${isSel ? '✓ ' : '+ '} ${chip.rotulo}
+                </button>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
     }
 
-    html += `<div class="pt-2"><button type="button" onclick="PainelConfigurador.aplicarESalvar('${orgao.id}')" class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2"><i data-lucide="check-check" class="w-4 h-4"></i><span>Aplicar e Salvar ${orgao.nome}</span></button></div>`;
+    html += `
+      <div class="pt-2">
+        <button type="button" onclick="PainelConfigurador.aplicarESalvar('${orgao.id}')" class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2">
+          <i data-lucide="check-check" class="w-4 h-4"></i>
+          <span>Aplicar e Salvar ${orgao.nome}</span>
+        </button>
+      </div>
+    `;
+
     container.innerHTML = html;
     initIcons();
-    if (typeof orgao.onInit === 'function') setTimeout(() => orgao.onInit(), 10);
+
+    if (typeof orgao.onInit === 'function') {
+      setTimeout(() => {
+        orgao.onInit();
+      }, 10);
+    }
   },
 
   atualizarTextoAdicional: function(id, val) {
     const o = EstadoApp.orgaosAdicionais.find(x => x.id === id);
-    if (o) { o.texto = val; delete EstadoApp.textosEditadosManualmente[id]; AppInterface.marcarComoRascunho(); MotorLaudo.atualizarPaginasLaudo(); }
+    if (o) {
+      o.texto = val;
+      delete EstadoApp.textosEditadosManualmente[id];
+      AppInterface.marcarComoRascunho();
+      MotorLaudo.atualizarPaginasLaudo();
+    }
   },
 
   atualizarCampo: function(orgaoId, campo, valor) {
     const orgao = CONFIGURACAO_ORGAOS[orgaoId];
     if (!orgao) return;
-    if (typeof orgao.onFieldChange === 'function') orgao.onFieldChange(campo, valor);
-    else orgao.campos[campo] = valor;
+
+    if (typeof orgao.onFieldChange === 'function') {
+      orgao.onFieldChange(campo, valor);
+    } else {
+      orgao.campos[campo] = valor;
+    }
+
     delete EstadoApp.textosEditadosManualmente[orgaoId];
+
     const item = EstadoApp.itensLaudoTemplate.find(i => i.id === orgaoId);
     if (item) item.texto = orgao.gerarTexto(orgao.campos);
+
     AppInterface.marcarComoRascunho();
     MotorLaudo.atualizarPaginasLaudo();
   },
@@ -209,10 +306,13 @@ const PainelConfigurador = {
   toggleChip: function(orgaoId, chipId) {
     const orgao = CONFIGURACAO_ORGAOS[orgaoId];
     if (!orgao) return;
+
     const idx = orgao.chipsSelecionados.indexOf(chipId);
     if (idx >= 0) orgao.chipsSelecionados.splice(idx, 1);
     else orgao.chipsSelecionados.push(chipId);
+
     delete EstadoApp.textosEditadosManualmente[orgaoId];
+
     this.renderizar();
     AppInterface.marcarComoRascunho();
     MotorLaudo.atualizarPaginasLaudo();
@@ -222,8 +322,10 @@ const PainelConfigurador = {
     const orgao = CONFIGURACAO_ORGAOS[orgaoId];
     if (!orgao) return;
     orgao.oculto = !orgao.oculto;
+
     const item = EstadoApp.itensLaudoTemplate.find(i => i.id === orgaoId);
     if (item) item.oculto = orgao.oculto;
+
     this.renderizar();
     MotorLaudo.atualizarPaginasLaudo();
   },
@@ -233,9 +335,15 @@ const PainelConfigurador = {
     if (!orgao) return;
     orgao.chipsSelecionados = [];
     orgao.oculto = false;
+
     delete EstadoApp.textosEditadosManualmente[orgaoId];
+
     const item = EstadoApp.itensLaudoTemplate.find(i => i.id === orgaoId);
-    if (item) { item.texto = orgao.gerarTexto(orgao.campos); item.oculto = false; }
+    if (item) {
+      item.texto = orgao.gerarTexto(orgao.campos);
+      item.oculto = false;
+    }
+
     this.renderizar();
     MotorLaudo.atualizarPaginasLaudo();
   },
@@ -243,32 +351,41 @@ const PainelConfigurador = {
   aplicarESalvar: function(orgaoId) {
     const orgao = CONFIGURACAO_ORGAOS[orgaoId];
     if (!orgao) return;
+
     const item = EstadoApp.itensLaudoTemplate.find(i => i.id === orgaoId);
     if (item) item.texto = orgao.gerarTexto(orgao.campos);
+
     AppInterface.toggleStatusSalvo(true);
     MotorLaudo.atualizarPaginasLaudo();
   }
 };
 
-// =========================================================
-// INTERFACE E COMPONENTES
-// =========================================================
 const AppInterface = {
   clickTopTab: function(tabId) {
-    if (EstadoApp.tabAtiva === tabId && EstadoApp.painelAberto) { this.togglePanelCollapse(); return; }
+    if (EstadoApp.tabAtiva === tabId && EstadoApp.painelAberto) {
+      this.togglePanelCollapse();
+      return;
+    }
+
     if (!EstadoApp.painelAberto) this.setPainelAberto(true);
+
     EstadoApp.tabAtiva = tabId;
     this.atualizarEstiloBotoesAba(tabId);
+
     document.querySelectorAll('.tab-panel-body').forEach(panel => panel.classList.add('hidden'));
     const activePanel = document.getElementById(`tab-content-${tabId}`);
     if (activePanel) activePanel.classList.remove('hidden');
-    if (tabId === 'figado') PainelConfigurador.inicializarSeletor();
+
+    if (tabId === 'figado') {
+      PainelConfigurador.inicializarSeletor();
+    }
   },
 
   atualizarEstiloBotoesAba: function(tabId) {
     document.querySelectorAll('.top-tab-btn').forEach(btn => {
       btn.className = 'top-tab-btn flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-slate-100 dark:bg-zinc-800/60 text-slate-600 dark:text-zinc-400 hover:bg-white dark:hover:bg-zinc-900';
     });
+
     const activeBtn = document.getElementById(`tab-btn-${tabId}`);
     if (activeBtn) {
       activeBtn.className = 'top-tab-btn flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-white dark:bg-zinc-900 text-vet-600 dark:text-emerald-400 shadow-sm border border-slate-200 dark:border-zinc-700';
@@ -284,7 +401,9 @@ const AppInterface = {
     EstadoApp.painelAberto = aberto;
     const sidebar = document.getElementById('appSidebar');
     const toggleIcon = document.getElementById('icon-sidebar-toggle');
+
     if (!sidebar) return;
+
     if (aberto) {
       sidebar.classList.remove('sidebar-collapsed');
       if (toggleIcon) toggleIcon.setAttribute('data-lucide', 'chevron-left');
@@ -298,7 +417,10 @@ const AppInterface = {
   toggleLiquidoSubmenu: function() {
     const chk = document.getElementById('chk-liquido');
     const wrapper = document.getElementById('wrapper-liquido-dropdown');
-    if (chk && wrapper) { if (chk.checked) wrapper.classList.remove('hidden'); else wrapper.classList.add('hidden'); }
+    if (chk && wrapper) {
+      if (chk.checked) wrapper.classList.remove('hidden');
+      else wrapper.classList.add('hidden');
+    }
   },
 
   toggleDarkMode: function() {
@@ -336,6 +458,7 @@ const AppInterface = {
     const especieElem = document.getElementById('p-especie');
     const porte = document.getElementById('p-porte');
     if (!especieElem || !porte) return;
+    
     if (especieElem.value === "Felino") porte.value = "Felino";
     else if (porte.value === "Felino") porte.value = "Cão P";
     MotorLaudo.atualizarPaginasLaudo();
@@ -345,12 +468,21 @@ const AppInterface = {
     const sexo = document.getElementById('p-sexo')?.value || 'Macho';
     const statusRepro = document.getElementById('p-statusReprodutivo');
     if (statusRepro) {
-      if (sexo === 'Fêmea') { statusRepro.options[0].text = 'Castrada'; statusRepro.options[1].text = 'Não Castrada'; }
-      else { statusRepro.options[0].text = 'Castrado'; statusRepro.options[1].text = 'Não Castrado'; }
+      if (sexo === 'Fêmea') {
+        statusRepro.options[0].text = 'Castrada';
+        statusRepro.options[1].text = 'Não Castrada';
+      } else {
+        statusRepro.options[0].text = 'Castrado';
+        statusRepro.options[1].text = 'Não Castrado';
+      }
     }
+
     Object.keys(EstadoApp.textosEditadosManualmente).forEach(key => {
-      if (orgaoEhIncompativelComSexo(key, sexo)) delete EstadoApp.textosEditadosManualmente[key];
+      if (orgaoEhIncompativelComSexo(key, sexo)) {
+        delete EstadoApp.textosEditadosManualmente[key];
+      }
     });
+
     PainelConfigurador.inicializarSeletor();
     MotorLaudo.atualizarPaginasLaudo();
   },
@@ -361,16 +493,15 @@ const AppInterface = {
     const nova = prompt("Digite o nome da nova raça:");
     if (nova && nova.trim() !== "") {
       const opt = document.createElement('option');
-      opt.value = nova.trim(); opt.text = nova.trim(); opt.selected = true;
+      opt.value = nova.trim();
+      opt.text = nova.trim();
+      opt.selected = true;
       selectRaca.appendChild(opt);
       MotorLaudo.atualizarPaginasLaudo();
     }
   }
 };
 
-// =========================================================
-// MOTOR DE GERAÇÃO E PAGINAÇÃO DO LAUDO A4
-// =========================================================
 const MotorLaudo = {
   atualizarPaginasLaudo: function() {
     AppInterface.marcarComoRascunho();
@@ -389,29 +520,48 @@ const MotorLaudo = {
     const clinica = val('p-clinica') || 'Não informada';
     const porte = val('p-porte') || 'Cão P';
 
-    let textoStatusRepro = statusReproVal === 'Castrado' ? (sexo === 'Fêmea' ? 'Castrada' : 'Castrado') : (sexo === 'Fêmea' ? 'Não Castrada' : 'Não Castrado');
+    let textoStatusRepro = '';
+    if (statusReproVal === 'Castrado') {
+      textoStatusRepro = sexo === 'Fêmea' ? 'Castrada' : 'Castrado';
+    } else {
+      textoStatusRepro = sexo === 'Fêmea' ? 'Não Castrada' : 'Não Castrado';
+    }
+
     const sanitize = s => (s||"").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9-]/g, "_").trim();
     const nomeArquivoPdf = `Laudo_${sanitize(paciente)}_${sanitize(tutor)}.pdf`;
+    
     const labelElem = document.getElementById('label-filename');
     if (labelElem) labelElem.innerText = nomeArquivoPdf;
 
     let blocosHTML = [];
+
     if (typeof ModuloPainelPaciente !== 'undefined' && ModuloPainelPaciente.renderizarFicha) {
-      blocosHTML.push(ModuloPainelPaciente.renderizarFicha(paciente, idAnimal, tutor, especie, raca, sexo, textoStatusRepro, val('p-idadeAnos'), val('p-idadeMeses'), porte, val('p-requisitante') || 'Não informado', clinica));
+      blocosHTML.push(
+        ModuloPainelPaciente.renderizarFicha(
+          paciente, idAnimal, tutor, especie, raca, sexo, 
+          textoStatusRepro, val('p-idadeAnos'), val('p-idadeMeses'), 
+          porte, val('p-requisitante') || 'Não informado', clinica
+        )
+      );
     }
 
     blocosHTML.push(`<div class="a4-section-title">ACHADOS ULTRASSONOGRÁFICOS</div>`);
 
     Object.entries(CONFIGURACAO_ORGAOS).forEach(([chave, orgao]) => {
       if (orgao.oculto) return;
+
       const idOrgao = orgao.id || chave;
-      if (orgaoEhIncompativelComSexo(idOrgao, sexo)) return;
+
+      if (orgaoEhIncompativelComSexo(idOrgao, sexo)) {
+        return;
+      }
 
       const textoCalculado = orgao.gerarTexto(orgao.campos);
       const textoFinal = EstadoApp.textosEditadosManualmente[idOrgao] || textoCalculado;
 
       let refHtml = '';
       const jaPossuiRef = textoFinal && textoFinal.includes('ref-text');
+
       if (!jaPossuiRef) {
         if (idOrgao === 'estomago') {
           const med = parseFloat((orgao.campos.medida || '0').toString().replace(',', '.')) || 0;
@@ -458,57 +608,96 @@ const MotorLaudo = {
       }
 
       if (textoFinal && textoFinal.trim() !== '') {
-        blocosHTML.push(`<div class="a4-organ-item"><div><span class="a4-organ-name" onclick="PainelConfigurador.trocarOrgaoAtivo('${idOrgao}')" title="Configurar ${orgao.nome}">${orgao.nome}:</span> <span class="a4-organ-content" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('${idOrgao}', this)">${textoFinal}</span></div>${refHtml}</div>`);
+        blocosHTML.push(`
+          <div class="a4-organ-item">
+            <div>
+              <span class="a4-organ-name" onclick="PainelConfigurador.trocarOrgaoAtivo('${idOrgao}')" title="Configurar ${orgao.nome}">${orgao.nome}:</span> 
+              <span class="a4-organ-content" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('${idOrgao}', this)">${textoFinal}</span>
+            </div>
+            ${refHtml}
+          </div>
+        `);
       }
 
       if (orgao.chipsSelecionados && orgao.chipsSelecionados.length > 0) {
         orgao.chipsSelecionados.forEach(chipId => {
-          let textoChip = typeof orgao.gerarTextoAchado === 'function' ? orgao.gerarTextoAchado(chipId, orgao.campos) : '';
+          let textoChip = '';
+          if (typeof orgao.gerarTextoAchado === 'function') {
+            textoChip = orgao.gerarTextoAchado(chipId, orgao.campos);
+          }
           if (!textoChip) {
             const chipObj = orgao.chipsPatologias.find(c => c.id === chipId);
             textoChip = chipObj ? chipObj.texto : `Achado de ${chipId} em ${orgao.nome}.`;
           }
+
           const keyChip = `chip_${idOrgao}_${chipId}`;
           const textoChipFinal = EstadoApp.textosEditadosManualmente[keyChip] || `<strong>[${chipId}]:</strong> ${textoChip}`;
-          blocosHTML.push(`<div class="achado-adicional-highlight" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('${keyChip}', this)">${textoChipFinal}</div>`);
+
+          blocosHTML.push(`
+            <div class="achado-adicional-highlight" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('${keyChip}', this)">
+              ${textoChipFinal}
+            </div>
+          `);
         });
       }
     });
 
     EstadoApp.orgaosAdicionais.forEach(oa => {
       const txtAdicionalFinal = EstadoApp.textosEditadosManualmente[oa.id] || oa.texto;
-      blocosHTML.push(`<div class="a4-organ-item"><div><span class="a4-organ-name" onclick="PainelConfigurador.trocarOrgaoAtivo('${oa.id}')">${oa.nome}:</span> <span class="a4-organ-content" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('${oa.id}', this)">${txtAdicionalFinal}</span></div></div>`);
+      blocosHTML.push(`
+        <div class="a4-organ-item">
+          <div>
+            <span class="a4-organ-name" onclick="PainelConfigurador.trocarOrgaoAtivo('${oa.id}')">${oa.nome}:</span> 
+            <span class="a4-organ-content" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('${oa.id}', this)">${txtAdicionalFinal}</span>
+          </div>
+        </div>
+      `);
     });
 
     const isChk = id => document.getElementById(id)?.checked;
+
     if (isChk('chk-obs-hist')) {
       const txtHist = EstadoApp.textosEditadosManualmente['chk_obs_hist'] || "<b>OBS:</b> A avaliação ultrassonográfica não determina a natureza histológica da estrutura estudada, recomenda-se avaliação citológica e/ou histológica.";
       blocosHTML.push(`<div class="general-phrase-item" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('chk_obs_hist', this)">${txtHist}</div>`);
     }
+
     if (isChk('chk-linfo') && !CONFIGURACAO_ORGAOS['linfonodos']) {
       const txtLinfo = EstadoApp.textosEditadosManualmente['chk_linfo'] || "Não foram observados sinais sonográficos de alteração/aumento em região topográfica de linfonodos visibilizados.";
-      blocosHTML.push(`<div class="a4-organ-item"><div><span class="a4-organ-name">Linfonodos:</span> <span class="a4-organ-content" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('chk_linfo', this)">${txtLinfo}</span></div></div>`);
+      blocosHTML.push(`
+        <div class="a4-organ-item">
+          <div>
+            <span class="a4-organ-name">Linfonodos:</span> 
+            <span class="a4-organ-content" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('chk_linfo', this)">${txtLinfo}</span>
+          </div>
+        </div>
+      `);
     }
+
     if (isChk('chk-liquido')) {
       const v = document.getElementById('sel-liquido-qtd')?.value || 'nenhum';
       let txtLiquido = "Não há evidências sonográficas de líquido livre abdominal.";
       if (v === 'discreta') txtLiquido = "Nota-se discreta quantidade de conteúdo anecogênico livre disperso pela cavidade abdominal.";
       if (v === 'moderada') txtLiquido = "Nota-se moderada quantidade de conteúdo anecogênico livre disperso pela cavidade abdominal.";
       if (v === 'acentuada') txtLiquido = "Nota-se acentuada quantidade de conteúdo anecogênico livre disperso pela cavidade abdominal.";
+
       const txtLiqFinal = EstadoApp.textosEditadosManualmente['chk_liquido'] || txtLiquido;
       blocosHTML.push(`<div class="general-phrase-item" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('chk_liquido', this)">${txtLiqFinal}</div>`);
     }
+
     if (isChk('chk-vasos')) {
       const txtVasos = EstadoApp.textosEditadosManualmente['chk_vasos'] || "Não há evidências sonográficas de alterações nas porções visibilizadas dos grandes vasos abdominais.";
       blocosHTML.push(`<div class="general-phrase-item" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('chk_vasos', this)">${txtVasos}</div>`);
     }
+
     if (EstadoApp.photos.length > 0 && typeof GerenciadorGaleria !== 'undefined' && typeof GerenciadorGaleria.gerarBlocosHTML === 'function') {
       blocosHTML.push(...GerenciadorGaleria.gerarBlocosHTML());
     }
+
     if (isChk('chk-qualidade')) {
       const txtQual = EstadoApp.textosEditadosManualmente['chk_qualidade'] || "Qualidade técnica do exame pode ser prejudicada devido padrão respiratório / agitação corporal do paciente.";
       blocosHTML.push(`<div class="general-phrase-item" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('chk_qualidade', this)">${txtQual}</div>`);
     }
+
     if (isChk('chk-valor')) {
       const txtValor = EstadoApp.textosEditadosManualmente['chk_valor'] || "O valor preditivo de qualquer exame de diagnóstico por imagem depende da análise conjunta dos dados clínicos e demais exames do paciente. O laudo fica reservado somente para o ato do exame.";
       blocosHTML.push(`<div class="general-phrase-item" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('chk_valor', this)">${txtValor}</div>`);
@@ -516,24 +705,39 @@ const MotorLaudo = {
 
     const txtAssinatura1 = EstadoApp.textosEditadosManualmente['sig_nome'] || "Dra. Célia Carolina";
     const txtAssinatura2 = EstadoApp.textosEditadosManualmente['sig_crmv'] || "CRMV 54149";
-    blocosHTML.push(`<div class="signature-container"><div class="signature-line"></div><div class="text-xs font-bold" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('sig_nome', this)">${txtAssinatura1}</div><div class="text-[10px] text-slate-500" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('sig_crmv', this)">${txtAssinatura2}</div></div>`);
+
+    blocosHTML.push(`
+      <div class="signature-container">
+        <div class="signature-line"></div>
+        <div class="text-xs font-bold" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('sig_nome', this)">${txtAssinatura1}</div>
+        <div class="text-[10px] text-slate-500" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('sig_crmv', this)">${txtAssinatura2}</div>
+      </div>
+    `);
 
     let paginas = [];
     function criarNovaPaginaA4() {
       const pageElem = document.createElement('div');
       pageElem.className = 'page-a4';
-      pageElem.innerHTML = `<div class="page-content"></div><div class="a4-footer"><span class="page-num"></span></div>`;
+      pageElem.innerHTML = `
+        <div class="page-content"></div>
+        <div class="a4-footer">
+          <span class="page-num"></span>
+        </div>
+      `;
       container.appendChild(pageElem);
       paginas.push(pageElem);
       return pageElem.querySelector('.page-content');
     }
 
     let currentContent = criarNovaPaginaA4();
-    blocosHTML.forEach(htmlBloco => {
+
+    blocosHTML.forEach((htmlBloco) => {
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = htmlBloco;
       const elem = tempDiv.firstElementChild;
+
       currentContent.appendChild(elem);
+
       if (currentContent.scrollHeight > currentContent.clientHeight) {
         currentContent.removeChild(elem);
         currentContent = criarNovaPaginaA4();
@@ -544,7 +748,7 @@ const MotorLaudo = {
     const totalPaginas = paginas.length;
     paginas.forEach((pageElem, idx) => {
       const pageNumSpan = pageElem.querySelector('.page-num');
-      if (pageNumSpan) pageNumSpan.textContent = `Página ${idx + 1} de ${totalPaginas}`;
+      if (pageNumSpan) { pageNumSpan.textContent = `Página ${idx + 1} de ${totalPaginas}`; }
     });
 
     initIcons();
@@ -553,7 +757,7 @@ const MotorLaudo = {
 };
 
 // =========================================================
-// INTEGRACAO COM FIRESTORE CLOUD
+// FUNÇÃO ATUALIZADA PARA SALVAR NA NUVEM (FIRESTORE)
 // =========================================================
 async function salvarLaudoAtualNaGaleria() {
   const val = id => document.getElementById(id)?.value || '';
@@ -563,227 +767,244 @@ async function salvarLaudoAtualNaGaleria() {
   const raca = val('p-raca') || 'SRD';
   const tutor = val('p-responsavel') || '';
   const clinica = val('p-clinica') || '';
+  
   const paginasA4 = document.querySelectorAll('.page-a4');
   let conteudoHtml = '';
   let resumoTexto = '';
+  
   if (paginasA4.length > 0) {
-    paginasA4.forEach(pagina => { conteudoHtml += `<div class="page-a4 mb-6">${pagina.innerHTML}</div>`; resumoTexto += pagina.innerText + '\n'; });
+    paginasA4.forEach(pagina => {
+      conteudoHtml += `<div class="page-a4 mb-6">${pagina.innerHTML}</div>`;
+      resumoTexto += pagina.innerText + '\n';
+    });
   } else {
     const wrapper = document.getElementById('a4WrapperScale');
     conteudoHtml = wrapper ? wrapper.innerHTML : '';
     resumoTexto = wrapper ? wrapper.innerText : '';
   }
+
   const urlParams = new URLSearchParams(window.location.search);
   const idUrl = urlParams.get('editar');
-  const dadosLaudo = { paciente, prontuario, especie, raca, tutor, clinica, dataExame: new Date().toISOString(), estado: 'Salvo', conteudoHtml, resumoTexto };
+
+  const dadosLaudo = {
+    paciente,
+    prontuario,
+    especie,
+    raca,
+    tutor,
+    clinica,
+    dataExame: new Date().toISOString(),
+    estado: 'Salvo',
+    conteudoHtml,
+    resumoTexto
+  };
+
   try {
     const { collection, addDoc, doc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
-    if (idUrl) await setDoc(doc(window.db, "laudos", idUrl), dadosLaudo, { merge: true });
-    else await addDoc(collection(window.db, "laudos"), dadosLaudo);
-    if (typeof AppInterface !== 'undefined' && typeof AppInterface.toggleStatusSalvo === 'function') AppInterface.toggleStatusSalvo(true);
+    
+    if (idUrl) {
+      const docRef = doc(window.db, "laudos", idUrl);
+      await setDoc(docRef, dadosLaudo, { merge: true });
+    } else {
+      await addDoc(collection(window.db, "laudos"), dadosLaudo);
+    }
+
+    if (typeof AppInterface !== 'undefined' && typeof AppInterface.toggleStatusSalvo === 'function') {
+      AppInterface.toggleStatusSalvo(true);
+    }
+
     alert('Laudo salvo e sincronizado na nuvem com sucesso!');
-  } catch (error) { console.error("Erro ao salvar no Firebase:", error); alert('Erro ao salvar na nuvem.'); }
+  } catch (error) {
+    console.error("Erro ao salvar no Firebase:", error);
+    alert('Erro ao salvar na nuvem. Verifique a ligação à internet.');
+  }
 }
 
 async function carregarLaudoParaEdicao() {
   const idUrl = new URLSearchParams(window.location.search).get('editar');
   if (!idUrl) return;
+
   try {
     const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
-    const docSnap = await getDoc(doc(window.db, "laudos", idUrl));
+    const docRef = doc(window.db, "laudos", idUrl);
+    const docSnap = await getDoc(docRef);
+
     if (docSnap.exists()) {
       const laudo = docSnap.data();
       const setVal = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined) el.value = v; };
-      setVal('p-paciente', laudo.paciente); setVal('p-idAnimal', laudo.prontuario);
-      setVal('p-especie', laudo.especie); setVal('p-raca', laudo.raca);
-      setVal('p-responsavel', laudo.tutor); setVal('p-clinica', laudo.clinica);
+
+      setVal('p-paciente', laudo.paciente);
+      setVal('p-idAnimal', laudo.prontuario);
+      setVal('p-especie', laudo.especie);
+      setVal('p-raca', laudo.raca);
+      setVal('p-responsavel', laudo.tutor);
+      setVal('p-clinica', laudo.clinica);
+
       AppInterface.toggleStatusSalvo(true);
     }
-  } catch (error) { console.error("Erro ao carregar laudo:", error); }
+  } catch (error) {
+    console.error("Erro ao carregar laudo para edição:", error);
+  }
 }
 
-// =========================================================
-// GERADOR DE PDF EFICIENTE E COMPATÍVEL (MOBILE E PC)
-// =========================================================
 async function sharePdf() {
-  const containerOriginal = document.getElementById('a4WrapperScale');
-  if (!containerOriginal) return;
+  const container = document.getElementById('a4WrapperScale');
+  if (!container) return;
 
-  const labelFile = document.getElementById('label-filename');
-  const filename = labelFile ? labelFile.innerText.trim() : 'Laudo_UltrasVet.pdf';
-
-  // 1. Clona o contêiner A4
-  const cloneWrapper = containerOriginal.cloneNode(true);
-
-  // 2. Remove elementos interativos ou indesejados da captura
-  cloneWrapper.querySelectorAll('.no-print, .delete-photo-btn, button').forEach(el => el.remove());
-
-  // 3. Força a remoção de temas escuros e estipula regras estritas de impressão A4
-  cloneWrapper.querySelectorAll('.dark, .page-a4').forEach(el => {
-    el.classList.remove('dark');
-  });
-
-  const tempContainer = document.createElement('div');
-  tempContainer.id = 'pdf-capture-temp-wrapper';
-  tempContainer.style.position = 'fixed';
-  tempContainer.style.left = '-9999px';
-  tempContainer.style.top = '0';
-  tempContainer.style.width = '210mm';
-  tempContainer.style.background = '#ffffff';
-  tempContainer.style.color = '#1e293b';
-  tempContainer.style.setProperty('--a4-scale', '1');
-  tempContainer.style.transform = 'none';
-
-  // Força estilo limpo nas folhas A4 clonadas
-  const paginasClonadas = cloneWrapper.querySelectorAll('.page-a4');
-  paginasClonadas.forEach(p => {
-    p.style.backgroundColor = '#ffffff';
-    p.style.color = '#1e293b';
-    p.style.boxShadow = 'none';
-    p.style.transform = 'none';
-    p.style.margin = '0';
-  });
-
-  tempContainer.appendChild(cloneWrapper);
-  document.body.appendChild(tempContainer);
-
-  // 4. Configuração otimizada para html2pdf (Mobile & Desktop)
-  const opt = {
-    margin: 0,
-    filename: filename,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: {
-      scale: 2,
-      useCORS: true,
-      allowTaint: true,
-      logging: false,
-      backgroundColor: '#ffffff',
-      scrollX: 0,
-      scrollY: 0
-    },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true },
-    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-  };
+  const filename = document.getElementById('label-filename')?.innerText || 'Laudo_UltrasVet.pdf';
 
   try {
+    const clone = container.cloneNode(true);
+    clone.querySelectorAll('.no-print, .delete-photo-btn').forEach(el => el.remove());
+
+    const tempContainer = document.createElement('div');
+    tempContainer.style.position = 'fixed';
+    tempContainer.style.left = '-9999px';
+    tempContainer.style.top = '0';
+    tempContainer.style.width = '210mm';
+    tempContainer.style.background = '#ffffff';
+    tempContainer.appendChild(clone);
+    document.body.appendChild(tempContainer);
+
+    const opt = {
+      margin: [0, 0, 0, 0],
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
     if (typeof html2pdf !== 'undefined') {
-      await html2pdf().set(opt).from(cloneWrapper).save();
+      await html2pdf().set(opt).from(clone).save();
     } else {
-      throw new Error('Biblioteca html2pdf não carregada');
+      window.print();
     }
-  } catch (err) {
-    console.warn("Alternando para impressão nativa do navegador:", err);
 
-    // Fallback: Impressão Nativa garantindo modo claro temporário
-    const estavaModoEscuro = document.documentElement.classList.contains('dark');
-    if (estavaModoEscuro) document.documentElement.classList.remove('dark');
-
-    window.print();
-
-    if (estavaModoEscuro) document.documentElement.classList.add('dark');
-  } finally {
     if (tempContainer.parentNode) {
       document.body.removeChild(tempContainer);
     }
+  } catch (err) {
+    console.warn("Alternando para impressão nativa:", err);
+    window.print();
   }
 }
 
-// =========================================================
-// CONTROLO DE ZOOM E GESTOS TÁTEIS (TOUCH / PINCH / PAN)
-// =========================================================
 const ControleZoom = {
-  escala: 1.0, isDragging: false, startX: 0, startY: 0, scrollLeft: 0, scrollTop: 0, initialDistance: null,
+  escala: 1.0,
   
   obterEscalaInicial: function() {
-    const larguraEcra = window.innerWidth;
-    if (larguraEcra <= 480) return 0.55;
-    if (larguraEcra <= 768) return 0.65;
-    if (larguraEcra <= 1024) return 0.80;
-    return 1.0;
+    if (window.innerWidth <= 768) return 0.70;  // 70% para telemóveis
+    if (window.innerWidth <= 1024) return 0.85; // 85% para tablets (Galaxy Tab A11)
+    return 1.0;                                 // 100% para computadores
   },
 
-  ajustarZoomInicial: function() { this.escala = this.obterEscalaInicial(); this.aplicarEscala(); },
-  
+  ajustarZoomInicial: function() {
+    this.escala = this.obterEscalaInicial();
+    this.aplicarEscala();
+  },
+
   aplicarEscala: function() {
     const wrapper = document.getElementById('a4WrapperScale');
-    if (wrapper) wrapper.style.setProperty('--a4-scale', this.escala.toFixed(2));
+    if (wrapper) {
+      wrapper.style.setProperty('--a4-scale', this.escala.toFixed(2));
+    }
     this.atualizarBadge(Math.round(this.escala * 100) + '%');
   },
-
-  zoomIn: function() { this.escala = Math.min(2.0, this.escala + 0.1); this.aplicarEscala(); },
-  zoomOut: function() { this.escala = Math.max(0.3, this.escala - 0.1); this.aplicarEscala(); },
-  resetZoom: function() { this.ajustarZoomInicial(); },
-  atualizarBadge: function(texto) { const el = document.getElementById('zoom-level-text'); if (el) el.textContent = texto; },
   
-  initTouchAndDrag: function() {
-    const container = document.getElementById('previewContainer');
-    if (!container) return;
-
-    container.addEventListener('mousedown', (e) => {
-      if (e.target.closest('.page-a4') && !e.target.closest('[contenteditable="true"]')) {
-        this.isDragging = true; this.startX = e.clientX; this.startY = e.clientY; this.scrollLeft = container.scrollLeft; this.scrollTop = container.scrollTop;
-      }
-    });
-
-    window.addEventListener('mousemove', (e) => {
-      if (!this.isDragging) return;
-      e.preventDefault();
-      container.scrollLeft = this.scrollLeft - (e.clientX - this.startX);
-      container.scrollTop = this.scrollTop - (e.clientY - this.startY);
-    });
-
-    window.addEventListener('mouseup', () => { this.isDragging = false; });
-
-    container.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 1) {
-        if (!e.target.closest('[contenteditable="true"]')) {
-          this.isDragging = true; this.startX = e.touches[0].clientX; this.startY = e.touches[0].clientY; this.scrollLeft = container.scrollLeft; this.scrollTop = container.scrollTop;
-        }
-      } else if (e.touches.length === 2) {
-        this.isDragging = false;
-        this.initialDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-      }
-    }, { passive: false });
-
-    container.addEventListener('touchmove', (e) => {
-      if (e.touches.length === 1 && this.isDragging) {
-        e.preventDefault();
-        container.scrollLeft = this.scrollLeft - (e.touches[0].clientX - this.startX);
-        container.scrollTop = this.scrollTop - (e.touches[0].clientY - this.startY);
-      } else if (e.touches.length === 2 && this.initialDistance !== null) {
-        e.preventDefault();
-        const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-        const factor = currentDistance / this.initialDistance;
-        this.initialDistance = currentDistance;
-        this.escala = Math.max(0.3, Math.min(2.0, this.escala * factor));
-        this.aplicarEscala();
-      }
-    }, { passive: false });
-
-    container.addEventListener('touchend', (e) => {
-      if (e.touches.length < 2) this.initialDistance = null;
-      if (e.touches.length === 0) this.isDragging = false;
-    });
+  zoomIn: function() {
+    this.escala = Math.min(1.8, this.escala + 0.1);
+    this.aplicarEscala();
+  },
+  
+  zoomOut: function() {
+    this.escala = Math.max(0.4, this.escala - 0.1);
+    this.aplicarEscala();
+  },
+  
+  resetZoom: function() {
+    this.ajustarZoomInicial();
+  },
+  
+  atualizarBadge: function(texto) {
+    const el = document.getElementById('zoom-level-text');
+    if (el) el.textContent = texto;
   }
 };
 
-window.onload = async function() {
+document.addEventListener('mousedown', function(e) {
+  const isInputOrInteractive = e.target.closest('input, select, textarea, button, [contenteditable="true"], option, label');
+  const previewContainer = document.getElementById('previewContainer');
+  const insidePageA4 = e.target.closest('.page-a4');
+
+  if (!isInputOrInteractive) {
+    if (e.target.closest('#previewContainer') && !insidePageA4) {
+      e.preventDefault();
+      if (document.activeElement) document.activeElement.blur();
+      window.getSelection()?.removeAllRanges();
+      if (previewContainer) previewContainer.focus();
+    } else if (e.target.closest('#topTabBar, header, aside#appSidebar')) {
+      if (document.activeElement && document.activeElement.tagName !== 'BODY') {
+        document.activeElement.blur();
+      }
+      window.getSelection()?.removeAllRanges();
+      if (previewContainer) previewContainer.focus();
+    }
+  }
+});
+
+window.addEventListener('keydown', function(e) {
+  const activeEl = document.activeElement;
+  const isEditingText = activeEl && (
+    activeEl.tagName === 'INPUT' || 
+    activeEl.tagName === 'TEXTAREA' || 
+    activeEl.isContentEditable
+  );
+
+  if (isEditingText) return;
+
+  const container = document.getElementById('previewContainer');
+  if (!container) return;
+
+  const step = 150;
+  if (e.key === 'ArrowDown') {
+    container.scrollTop += step;
+    e.preventDefault();
+  } else if (e.key === 'ArrowUp') {
+    container.scrollTop -= step;
+    e.preventDefault();
+  } else if (e.key === 'PageDown') {
+    container.scrollTop += container.clientHeight * 0.8;
+    e.preventDefault();
+  } else if (e.key === 'PageUp') {
+    container.scrollTop -= container.clientHeight * 0.8;
+    e.preventDefault();
+  }
+});
+
+window.addEventListener('resize', () => ControleZoom.ajustarZoomInicial());
+
+window.onload = function() {
   const savedTheme = localStorage.getItem('ultrasvet_theme');
   if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
     document.documentElement.classList.add('dark');
-  } else { document.documentElement.classList.remove('dark'); }
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
 
   if (window.CONFIGURACAO_ORGAOS) {
     Object.keys(CONFIGURACAO_ORGAOS).forEach(key => {
       const item = EstadoApp.itensLaudoTemplate.find(i => i.id === key);
-      if (item && CONFIGURACAO_ORGAOS[key]) item.texto = CONFIGURACAO_ORGAOS[key].gerarTexto(CONFIGURACAO_ORGAOS[key].campos);
+      if (item && CONFIGURACAO_ORGAOS[key]) {
+        item.texto = CONFIGURACAO_ORGAOS[key].gerarTexto(CONFIGURACAO_ORGAOS[key].campos);
+      }
     });
   }
 
-  await carregarLaudoParaEdicao();
+  carregarLaudoParaEdicao();
   PainelConfigurador.inicializarSeletor();
-  if (typeof GerenciadorGaleria !== 'undefined' && GerenciadorGaleria.atualizarSidebar) GerenciadorGaleria.atualizarSidebar();
+  if (typeof GerenciadorGaleria !== 'undefined' && GerenciadorGaleria.atualizarSidebar) {
+    GerenciadorGaleria.atualizarSidebar();
+  }
   MotorLaudo.atualizarPaginasLaudo();
   ControleZoom.ajustarZoomInicial();
-  ControleZoom.initTouchAndDrag();
 };
