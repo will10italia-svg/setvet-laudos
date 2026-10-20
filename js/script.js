@@ -845,4 +845,13 @@ async function carregarLaudoParaEdicao() {
       setVal('p-paciente', laudo.paciente);
       setVal('p-idAnimal', laudo.prontuario);
       setVal('p-especie', laudo.especie);
-      setVal('p-r
+      setVal('p-raca', laudo.raca);
+      setVal('p-responsavel', laudo.tutor);
+      setVal('p-clinica', laudo.clinica);
+
+      MotorLaudo.atualizarPaginasLaudo();
+    }
+  } catch (error) {
+    console.error("Erro ao carregar laudo para edição:", error);
+  }
+}
