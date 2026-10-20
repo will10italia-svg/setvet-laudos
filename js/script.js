@@ -1,6 +1,6 @@
 /**
  * Setvet - Sistema Diagnóstico & Confecção de Laudo
- * Arquivo: script.js (Código Principal Atualizado com onclone PDF)
+ * Arquivo: script.js (Código Principal Atualizado com Alternância Automática de Tema para PDF)
  */
 
 function initIcons() { 
@@ -603,7 +603,7 @@ async function carregarLaudoParaEdicao() {
 }
 
 // =========================================================
-// GERADOR DE PDF 100% MODO CLARO E A4 PERFEITO (MOBILE & PC)
+// GERADOR DE PDF 100% MODO CLARO (COM ALTERNÂNCIA AUTOMÁTICA)
 // =========================================================
 async function sharePdf() {
   const container = document.getElementById('a4WrapperScale');
@@ -611,6 +611,12 @@ async function sharePdf() {
 
   const labelFile = document.getElementById('label-filename');
   const filename = labelFile ? labelFile.innerText.trim() : 'Laudo_UltrasVet.pdf';
+
+  // 1. Alterna temporariamente o tablet/PC para o modo claro para evitar conflitos de cores
+  const estavaNoModoEscuro = document.documentElement.classList.contains('dark');
+  if (estavaNoModoEscuro) {
+    document.documentElement.classList.remove('dark');
+  }
 
   const opt = {
     margin: 0,
@@ -624,11 +630,11 @@ async function sharePdf() {
       backgroundColor: '#ffffff',
       windowWidth: 794, // Largura padrão A4 a 96 DPI
       onclone: (clonedDoc) => {
-        // 1. Força Modo Claro na cópia gerada para o PDF
+        // Força Modo Claro absoluto na cópia virtual do PDF
         clonedDoc.documentElement.classList.remove('dark');
         if (clonedDoc.body) clonedDoc.body.classList.remove('dark');
 
-        // 2. Remove o zoom/escala de celular para capturar em 100% tamanho real A4
+        // Remove a escala de zoom do tablet para capturar em tamanho real 100% A4
         const wrapper = clonedDoc.getElementById('a4WrapperScale');
         if (wrapper) {
           wrapper.style.transform = 'none';
@@ -636,7 +642,7 @@ async function sharePdf() {
           wrapper.style.margin = '0 auto';
         }
 
-        // 3. Garante fundo branco e texto escuro em todas as folhas A4
+        // Garante fundo branco e texto escuro em todas as folhas A4 geradas
         const paginas = clonedDoc.querySelectorAll('.page-a4');
         paginas.forEach(p => {
           p.style.backgroundColor = '#ffffff';
@@ -646,12 +652,12 @@ async function sharePdf() {
           p.style.margin = '0 auto';
         });
 
-        // 4. Garante a cor original do cabeçalho e títulos Setvet
+        // Garante a cor original do cabeçalho e títulos Setvet (Verde oficial)
         clonedDoc.querySelectorAll('.a4-section-title, .a4-organ-name').forEach(el => {
           el.style.color = '#0F5A47';
         });
 
-        // 5. Remove botões e elementos interativos do PDF
+        // Remove botões e elementos interativos do PDF final
         clonedDoc.querySelectorAll('.no-print, .delete-photo-btn, button').forEach(el => el.remove());
       }
     },
@@ -668,6 +674,15 @@ async function sharePdf() {
   } catch (err) {
     console.error("Erro ao gerar PDF com html2pdf, recorrendo à impressão nativa:", err);
     window.print();
+  } finally {
+    // 2. Restaura automaticamente o modo escuro no tablet logo após a exportação do PDF
+    if (estavaNoModoEscuro) {
+      document.documentElement.classList.add('dark');
+    }
+    // Reaplicamos a escala de visualização correta para o usuário continuar trabalhando
+    if (typeof ControleZoom !== 'undefined' && ControleZoom.aplicarEscala) {
+      ControleZoom.aplicarEscala();
+    }
   }
 }
 
