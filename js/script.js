@@ -401,15 +401,24 @@ const AppInterface = {
     EstadoApp.painelAberto = aberto;
     const sidebar = document.getElementById('appSidebar');
     const toggleIcon = document.getElementById('icon-sidebar-toggle');
+    const overlay = document.getElementById('sidebarOverlay');
 
     if (!sidebar) return;
 
     if (aberto) {
       sidebar.classList.remove('sidebar-collapsed');
       if (toggleIcon) toggleIcon.setAttribute('data-lucide', 'chevron-left');
+      if (overlay) {
+        overlay.classList.remove('hidden');
+        setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+      }
     } else {
       sidebar.classList.add('sidebar-collapsed');
       if (toggleIcon) toggleIcon.setAttribute('data-lucide', 'chevron-right');
+      if (overlay) {
+        overlay.classList.add('opacity-0');
+        setTimeout(() => overlay.classList.add('hidden'), 300);
+      }
     }
     initIcons();
   },
@@ -757,7 +766,7 @@ const MotorLaudo = {
 };
 
 // =========================================================
-// FUNÇÃO ATUALIZADA PARA SALVAR NA NUVEM (FIRESTORE)
+// SALVAR E CARREGAR NA NUVEM (FIRESTORE)
 // =========================================================
 async function salvarLaudoAtualNaGaleria() {
   const val = id => document.getElementById(id)?.value || '';
@@ -836,175 +845,4 @@ async function carregarLaudoParaEdicao() {
       setVal('p-paciente', laudo.paciente);
       setVal('p-idAnimal', laudo.prontuario);
       setVal('p-especie', laudo.especie);
-      setVal('p-raca', laudo.raca);
-      setVal('p-responsavel', laudo.tutor);
-      setVal('p-clinica', laudo.clinica);
-
-      AppInterface.toggleStatusSalvo(true);
-    }
-  } catch (error) {
-    console.error("Erro ao carregar laudo para edição:", error);
-  }
-}
-
-async function sharePdf() {
-  const container = document.getElementById('a4WrapperScale');
-  if (!container) return;
-
-  const filename = document.getElementById('label-filename')?.innerText || 'Laudo_UltrasVet.pdf';
-
-  try {
-    const clone = container.cloneNode(true);
-    clone.querySelectorAll('.no-print, .delete-photo-btn').forEach(el => el.remove());
-
-    const tempContainer = document.createElement('div');
-    tempContainer.style.position = 'fixed';
-    tempContainer.style.left = '-9999px';
-    tempContainer.style.top = '0';
-    tempContainer.style.width = '210mm';
-    tempContainer.style.background = '#ffffff';
-    tempContainer.appendChild(clone);
-    document.body.appendChild(tempContainer);
-
-    const opt = {
-      margin: [0, 0, 0, 0],
-      filename: filename,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-
-    if (typeof html2pdf !== 'undefined') {
-      await html2pdf().set(opt).from(clone).save();
-    } else {
-      window.print();
-    }
-
-    if (tempContainer.parentNode) {
-      document.body.removeChild(tempContainer);
-    }
-  } catch (err) {
-    console.warn("Alternando para impressão nativa:", err);
-    window.print();
-  }
-}
-
-const ControleZoom = {
-  escala: 1.0,
-  
-  obterEscalaInicial: function() {
-    if (window.innerWidth <= 768) return 0.70;  // 70% para telemóveis
-    if (window.innerWidth <= 1024) return 0.85; // 85% para tablets (Galaxy Tab A11)
-    return 1.0;                                 // 100% para computadores
-  },
-
-  ajustarZoomInicial: function() {
-    this.escala = this.obterEscalaInicial();
-    this.aplicarEscala();
-  },
-
-  aplicarEscala: function() {
-    const wrapper = document.getElementById('a4WrapperScale');
-    if (wrapper) {
-      wrapper.style.setProperty('--a4-scale', this.escala.toFixed(2));
-    }
-    this.atualizarBadge(Math.round(this.escala * 100) + '%');
-  },
-  
-  zoomIn: function() {
-    this.escala = Math.min(1.8, this.escala + 0.1);
-    this.aplicarEscala();
-  },
-  
-  zoomOut: function() {
-    this.escala = Math.max(0.4, this.escala - 0.1);
-    this.aplicarEscala();
-  },
-  
-  resetZoom: function() {
-    this.ajustarZoomInicial();
-  },
-  
-  atualizarBadge: function(texto) {
-    const el = document.getElementById('zoom-level-text');
-    if (el) el.textContent = texto;
-  }
-};
-
-document.addEventListener('mousedown', function(e) {
-  const isInputOrInteractive = e.target.closest('input, select, textarea, button, [contenteditable="true"], option, label');
-  const previewContainer = document.getElementById('previewContainer');
-  const insidePageA4 = e.target.closest('.page-a4');
-
-  if (!isInputOrInteractive) {
-    if (e.target.closest('#previewContainer') && !insidePageA4) {
-      e.preventDefault();
-      if (document.activeElement) document.activeElement.blur();
-      window.getSelection()?.removeAllRanges();
-      if (previewContainer) previewContainer.focus();
-    } else if (e.target.closest('#topTabBar, header, aside#appSidebar')) {
-      if (document.activeElement && document.activeElement.tagName !== 'BODY') {
-        document.activeElement.blur();
-      }
-      window.getSelection()?.removeAllRanges();
-      if (previewContainer) previewContainer.focus();
-    }
-  }
-});
-
-window.addEventListener('keydown', function(e) {
-  const activeEl = document.activeElement;
-  const isEditingText = activeEl && (
-    activeEl.tagName === 'INPUT' || 
-    activeEl.tagName === 'TEXTAREA' || 
-    activeEl.isContentEditable
-  );
-
-  if (isEditingText) return;
-
-  const container = document.getElementById('previewContainer');
-  if (!container) return;
-
-  const step = 150;
-  if (e.key === 'ArrowDown') {
-    container.scrollTop += step;
-    e.preventDefault();
-  } else if (e.key === 'ArrowUp') {
-    container.scrollTop -= step;
-    e.preventDefault();
-  } else if (e.key === 'PageDown') {
-    container.scrollTop += container.clientHeight * 0.8;
-    e.preventDefault();
-  } else if (e.key === 'PageUp') {
-    container.scrollTop -= container.clientHeight * 0.8;
-    e.preventDefault();
-  }
-});
-
-window.addEventListener('resize', () => ControleZoom.ajustarZoomInicial());
-
-window.onload = function() {
-  const savedTheme = localStorage.getItem('ultrasvet_theme');
-  if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-    document.documentElement.classList.add('dark');
-  } else {
-    document.documentElement.classList.remove('dark');
-  }
-
-  if (window.CONFIGURACAO_ORGAOS) {
-    Object.keys(CONFIGURACAO_ORGAOS).forEach(key => {
-      const item = EstadoApp.itensLaudoTemplate.find(i => i.id === key);
-      if (item && CONFIGURACAO_ORGAOS[key]) {
-        item.texto = CONFIGURACAO_ORGAOS[key].gerarTexto(CONFIGURACAO_ORGAOS[key].campos);
-      }
-    });
-  }
-
-  carregarLaudoParaEdicao();
-  PainelConfigurador.inicializarSeletor();
-  if (typeof GerenciadorGaleria !== 'undefined' && GerenciadorGaleria.atualizarSidebar) {
-    GerenciadorGaleria.atualizarSidebar();
-  }
-  MotorLaudo.atualizarPaginasLaudo();
-  ControleZoom.ajustarZoomInicial();
-};
+      setVal('p-r
