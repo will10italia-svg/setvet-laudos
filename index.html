@@ -621,6 +621,24 @@
 
   </div>
 
+  <!-- SCRIPTS DO FIREBASE (SDK v10) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBNbpvlQ9kctl1TP_vw4_BXBVEumL9_P2c",
+      authDomain: "setvet-laudos-cloud.firebaseapp.com",
+      projectId: "setvet-laudos-cloud",
+      storageBucket: "setvet-laudos-cloud.firebasestorage.app",
+      messagingSenderId: "939149869953",
+      appId: "1:939149869953:web:26a7f33262ca05f8c81e80"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    window.db = getFirestore(app);
+  </script>
+
   <!-- SCRIPTS EXTERNOS DE ÓRGÃOS -->
   <script src="js/abdominal/orgaos/figado.js"></script>
   <script src="js/abdominal/orgaos/vesicula.js"></script>
