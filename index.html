@@ -58,7 +58,24 @@
       -webkit-user-select: none !important;
     }
 
-    /* CONTAINER E ESCALA DA FOLHA A4 */
+    .page-a4, [contenteditable="true"] {
+      user-select: text !important;
+      -webkit-user-select: text !important;
+    }
+
+    [contenteditable="true"] {
+      cursor: text !important;
+      pointer-events: auto !important;
+      outline: none;
+    }
+
+    [contenteditable="true"]:focus {
+      outline: 1px dashed #10b981 !important;
+      background-color: rgba(16, 185, 129, 0.04) !important;
+      border-radius: 2px;
+    }
+
+    /* Container de escala adaptado para touch pan e pinch */
     .a4-wrapper-scale {
       display: flex;
       flex-direction: column;
@@ -67,22 +84,21 @@
       transform: scale(var(--a4-scale, 1));
       transform-origin: top center;
       transition: transform 0.05s ease-out;
-      margin: 0 auto;
+      margin: auto;
       padding: 2rem 1rem 5rem 1rem;
       width: 210mm;
       box-sizing: border-box;
       touch-action: none;
     }
 
-    /* ISOLAMENTO TOTAL DA FOLHA A4 DO MODO NOTURNO */
+    /* Folha A4 sempre com fundo branco limpo e texto escuro para padrão profissional de laudo */
     .page-a4 {
       background-color: #ffffff !important;
       color: #1e293b !important;
-      width: 210mm !important;
-      min-width: 210mm !important;
-      max-width: 210mm !important;
-      height: 297mm !important;
-      min-height: 297mm !important;
+      width: 210mm;
+      min-width: 210mm;
+      height: 297mm;
+      min-height: 297mm;
       padding: 15mm 15mm 18mm 15mm;
       box-shadow: 0 10px 25px rgba(0,0,0,0.25);
       border-radius: 2px;
@@ -92,11 +108,7 @@
       overflow: hidden;
     }
 
-    .page-a4 * {
-      color: #1e293b;
-    }
-
-    /* MARCA D'ÁGUA SEGURO (Previne crash caso o ficheiro de imagem falhe) */
+    /* Marca d'água restaurada com o seu logótipo original (image_5992ee00.jpg) */
     .page-a4::before {
       content: "";
       position: absolute;
@@ -105,7 +117,7 @@
       transform: translate(-50%, -50%);
       width: 380px;
       height: 380px;
-      background-image: url('logo.png'), url('image_5992ee00.jpg');
+      background-image: url('image_5992ee00.jpg');
       background-repeat: no-repeat;
       background-position: center;
       background-size: contain;
@@ -126,12 +138,19 @@
       position: relative;
     }
 
-    /* ELEMENTOS INTERNOS DO LAUDO A4 */
+    /* Ajustes para evitar overflow no cabeçalho em telemóveis */
+    @media (max-width: 768px) {
+      header .max-w-7xl {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+      }
+    }
+
     .laudo-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 2px solid #0F5A47 !important;
+      border-bottom: 2px solid #0F5A47;
       padding-bottom: 0.5rem;
       margin-bottom: 0.75rem;
     }
@@ -156,8 +175,8 @@
     .a4-section-title {
       font-size: 0.85rem;
       font-weight: bold;
-      color: #0F5A47 !important;
-      border-bottom: 1px solid #cbd5e1 !important;
+      color: #0F5A47;
+      border-bottom: 1px solid #cbd5e1;
       padding-bottom: 3px;
       margin-top: 10px;
       margin-bottom: 10px;
@@ -171,10 +190,10 @@
       background-color: transparent !important;
     }
 
-    .a4-organ-name { font-weight: bold; color: #0F5A47 !important; display: inline; cursor: pointer; outline: none; }
+    .a4-organ-name { font-weight: bold; color: #0F5A47; display: inline; cursor: pointer; outline: none; }
     .a4-organ-name:hover { text-decoration: underline; }
 
-    .a4-organ-content { display: inline; background-color: transparent !important; color: #1e293b !important; }
+    .a4-organ-content { display: inline; background-color: transparent !important; }
 
     .general-phrase-item {
       margin-bottom: 4px;
@@ -203,10 +222,11 @@
       font-size: 0.70rem;
       line-height: 1.2;
       font-family: 'JetBrains Mono', monospace;
-      color: #94a3b8 !important;
+      color: #94a3b8;
       background-color: transparent !important;
       border: none !important;
       font-weight: 400;
+      transition: color 0.2s ease;
     }
     
     .ref-text.is-alert, 
@@ -218,8 +238,8 @@
 
     .gallery-grid-2x3 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; width: 100%; }
     .gallery-item-a4 {
-      background-color: transparent !important;
-      border: 1px solid #cbd5e1 !important;
+      background-color: transparent;
+      border: 1px solid #cbd5e1;
       border-radius: 6px;
       padding: 6px;
       display: flex;
@@ -230,7 +250,7 @@
     .image-wrapper-a4 {
       width: 100%;
       height: 58mm;
-      background-color: #000000 !important;
+      background-color: #000000;
       border: 1px solid #cbd5e1;
       border-radius: 4px;
       overflow: hidden;
@@ -241,17 +261,17 @@
     .image-wrapper-a4 img { width: 100%; height: 100%; object-fit: contain; }
 
     .signature-container { margin-top: 25px; display: flex; flex-direction: column; align-items: center; text-align: center; }
-    .signature-line { width: 220px; border-top: 1px solid #1e293b !important; margin-bottom: 4px; }
+    .signature-line { width: 220px; border-top: 1px solid #1e293b; margin-bottom: 4px; }
 
     .a4-footer {
       position: absolute;
       bottom: 8mm;
       left: 15mm;
       right: 15mm;
-      border-top: 1px solid #cbd5e1 !important;
+      border-top: 1px solid #cbd5e1;
       padding-top: 4px;
       font-size: 0.7rem;
-      color: #64748b !important;
+      color: #64748b;
       display: flex;
       justify-content: flex-end;
       z-index: 1;
@@ -282,6 +302,7 @@
     <div class="max-w-7xl mx-auto px-2 sm:px-6 h-12 flex items-center justify-between gap-1">
       
       <div class="flex items-center gap-1.5 shrink-0">
+        <!-- Botão Toggle do Menu Hamburger -->
         <button onclick="AppInterface.togglePanelCollapse()" class="p-1.5 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 hover:bg-slate-200 focus:outline-none" title="Abrir/Fechar Menu">
           <i data-lucide="menu" class="w-5 h-5"></i>
         </button>
