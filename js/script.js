@@ -893,9 +893,9 @@ const ControleZoom = {
   escala: 1.0,
   
   obterEscalaInicial: function() {
-    if (window.innerWidth <= 768) return 0.80;
-    if (window.innerWidth <= 1024) return 0.90;
-    return 1.0;
+    if (window.innerWidth <= 768) return 0.70;  // 70% para telemóveis
+    if (window.innerWidth <= 1024) return 0.85; // 85% para tablets (Galaxy Tab A11)
+    return 1.0;                                 // 100% para computadores
   },
 
   ajustarZoomInicial: function() {
@@ -1006,4 +1006,5 @@ window.onload = function() {
     GerenciadorGaleria.atualizarSidebar();
   }
   MotorLaudo.atualizarPaginasLaudo();
+  ControleZoom.ajustarZoomInicial();
 };
