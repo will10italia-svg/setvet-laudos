@@ -270,30 +270,30 @@
     /* Regras Estritas de Impressão (Força Modo Claro no PDF/Impressora) */
     @page { size: A4 portrait; margin: 0mm !important; }
     @media print {
-      html, body, .dark, .dark * { 
-        background-color: #ffffff !important; 
+      body, html { 
+        background: #ffffff !important; 
         color: #1e293b !important;
         overflow: visible !important; 
         height: auto !important; 
         width: 210mm !important; 
       }
-      .page-a4, .dark .page-a4 {
+      .dark, .dark * {
+        background-color: transparent !important;
+        color: #1e293b !important;
+        border-color: #cbd5e1 !important;
+      }
+      .dark .page-a4 {
         background-color: #ffffff !important;
         color: #1e293b !important;
-        box-shadow: none !important;
-        margin: 0 !important;
-        width: 210mm !important;
-        height: 297mm !important;
-        page-break-after: always !important;
       }
-      .a4-section-title, .dark .a4-section-title,
-      .a4-organ-name, .dark .a4-organ-name {
+      .dark .a4-section-title, .dark .a4-organ-name, .dark .laudo-header {
         color: #0F5A47 !important;
         border-color: #0F5A47 !important;
       }
-      header, nav, aside, #zoomControlFloating, .no-print, button { display: none !important; }
+      header, nav, aside, #zoomControlFloating, .no-print { display: none !important; }
       main, #previewContainer { background: #ffffff !important; padding: 0 !important; margin: 0 !important; overflow: visible !important; width: 210mm !important; }
       .a4-wrapper-scale { transform: none !important; padding-bottom: 0 !important; }
+      .page-a4 { box-shadow: none !important; margin: 0 !important; width: 210mm !important; height: 297mm !important; page-break-after: always !important; }
     }
   </style>
 </head>
