@@ -757,9 +757,9 @@ const MotorLaudo = {
 };
 
 // =========================================================
-// FUNÇÃO TOTALMENTE FUNCIONAL PARA GRAVAR LAUDO COM HTML E IMAGENS
+// FUNÇÃO ATUALIZADA PARA SALVAR NA NUVEM (FIRESTORE)
 // =========================================================
-function salvarLaudoAtualNaGaleria() {
+async function salvarLaudoAtualNaGaleria() {
   const val = id => document.getElementById(id)?.value || '';
   const paciente = val('p-paciente') || 'Paciente';
   const prontuario = val('p-idAnimal') || '---';
@@ -785,17 +785,8 @@ function salvarLaudoAtualNaGaleria() {
 
   const urlParams = new URLSearchParams(window.location.search);
   const idUrl = urlParams.get('editar');
-  let laudos = [];
-  
-  try {
-    const stored = localStorage.getItem('ultrasvet_laudos_salvos');
-    if (stored) laudos = JSON.parse(stored);
-  } catch (e) {
-    laudos = [];
-  }
 
   const dadosLaudo = {
-    id: idUrl || ('laudo-' + Date.now()),
     paciente,
     prontuario,
     especie,
@@ -808,44 +799,52 @@ function salvarLaudoAtualNaGaleria() {
     resumoTexto
   };
 
-  if (idUrl) {
-    const idx = laudos.findIndex(l => l.id === idUrl);
-    if (idx >= 0) {
-      laudos[idx] = dadosLaudo;
+  try {
+    const { collection, addDoc, doc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+    
+    if (idUrl) {
+      const docRef = doc(window.db, "laudos", idUrl);
+      await setDoc(docRef, dadosLaudo, { merge: true });
     } else {
-      laudos.unshift(dadosLaudo);
+      await addDoc(collection(window.db, "laudos"), dadosLaudo);
     }
-  } else {
-    laudos.unshift(dadosLaudo);
-  }
 
-  localStorage.setItem('ultrasvet_laudos_salvos', JSON.stringify(laudos));
-  
-  if (typeof AppInterface !== 'undefined' && typeof AppInterface.toggleStatusSalvo === 'function') {
-    AppInterface.toggleStatusSalvo(true);
-  }
+    if (typeof AppInterface !== 'undefined' && typeof AppInterface.toggleStatusSalvo === 'function') {
+      AppInterface.toggleStatusSalvo(true);
+    }
 
-  alert('Laudo salvo com sucesso na Galeria de Laudos!');
+    alert('Laudo salvo e sincronizado na nuvem com sucesso!');
+  } catch (error) {
+    console.error("Erro ao salvar no Firebase:", error);
+    alert('Erro ao salvar na nuvem. Verifique a ligação à internet.');
+  }
 }
 
-function carregarLaudoParaEdicao() {
+async function carregarLaudoParaEdicao() {
   const idUrl = new URLSearchParams(window.location.search).get('editar');
   if (!idUrl) return;
 
-  const laudos = JSON.parse(localStorage.getItem('ultrasvet_laudos_salvos') || '[]');
-  const laudo = laudos.find(l => l.id === idUrl);
-  if (!laudo) return;
+  try {
+    const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+    const docRef = doc(window.db, "laudos", idUrl);
+    const docSnap = await getDoc(docRef);
 
-  const setVal = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined) el.value = v; };
+    if (docSnap.exists()) {
+      const laudo = docSnap.data();
+      const setVal = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined) el.value = v; };
 
-  setVal('p-paciente', laudo.paciente);
-  setVal('p-idAnimal', laudo.prontuario);
-  setVal('p-especie', laudo.especie);
-  setVal('p-raca', laudo.raca);
-  setVal('p-responsavel', laudo.tutor);
-  setVal('p-clinica', laudo.clinica);
+      setVal('p-paciente', laudo.paciente);
+      setVal('p-idAnimal', laudo.prontuario);
+      setVal('p-especie', laudo.especie);
+      setVal('p-raca', laudo.raca);
+      setVal('p-responsavel', laudo.tutor);
+      setVal('p-clinica', laudo.clinica);
 
-  AppInterface.toggleStatusSalvo(true);
+      AppInterface.toggleStatusSalvo(true);
+    }
+  } catch (error) {
+    console.error("Erro ao carregar laudo para edição:", error);
+  }
 }
 
 async function sharePdf() {
