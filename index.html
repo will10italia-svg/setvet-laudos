@@ -2,7 +2,7 @@
 <html lang="pt-BR" class="light">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes">
   <title>Setvet - Sistema Diagnóstico & Confecção de Laudo</title>
 
   <!-- Configuração PWA / Ícone na Tela Inicial -->
@@ -48,10 +48,10 @@
     :root { --a4-scale: 1; }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
-    ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
     .dark ::-webkit-scrollbar-thumb { background: #475569; }
 
-    body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; height: 100vh; overflow: hidden; }
+    body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; height: 100vh; overflow: hidden; touch-action: manipulation; }
 
     #previewContainer, .a4-wrapper-scale {
       user-select: none !important;
@@ -75,29 +75,24 @@
       border-radius: 2px;
     }
 
-    /* Container de escala adaptado para touch pan e pinch */
     .a4-wrapper-scale {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 2rem;
+      gap: 1.5rem;
       transform: scale(var(--a4-scale, 1));
       transform-origin: top center;
-      transition: transform 0.05s ease-out;
-      margin: auto;
-      padding: 2rem 1rem 5rem 1rem;
-      width: 210mm;
+      transition: transform 0.15s ease-out;
+      margin: 0 auto;
+      padding: 1rem 0.5rem 4rem 0.5rem;
       box-sizing: border-box;
-      touch-action: none;
     }
 
     .page-a4 {
       background-color: #ffffff;
       color: #1e293b;
       width: 210mm;
-      min-width: 210mm;
       height: 297mm;
-      min-height: 297mm;
       padding: 15mm 15mm 18mm 15mm;
       box-shadow: 0 10px 25px rgba(0,0,0,0.25);
       border-radius: 2px;
@@ -108,7 +103,7 @@
       transition: background-color 0.3s, color 0.3s;
     }
 
-    /* Marca d'água atualizada com o nome correto do ficheiro '7v' */
+    /* Marca d'água */
     .page-a4::before {
       content: "";
       position: absolute;
@@ -117,7 +112,7 @@
       transform: translate(-50%, -50%);
       width: 380px;
       height: 380px;
-      background-image: url('7v.jpg');
+      background-image: url('image_5992ee00.jpg');
       background-repeat: no-repeat;
       background-position: center;
       background-size: contain;
@@ -131,21 +126,13 @@
     .page-content { height: calc(297mm - 15mm - 18mm - 10mm); overflow: hidden; position: relative; z-index: 1; }
 
     #previewContainer {
+      touch-action: pan-x pan-y pinch-zoom;
       overflow: auto;
       -webkit-overflow-scrolling: touch;
       flex: 1 1 0%;
       width: 100%;
       height: 100%;
       outline: none;
-      position: relative;
-    }
-
-    /* Ajustes para evitar overflow no cabeçalho em telemóveis */
-    @media (max-width: 768px) {
-      header .max-w-7xl {
-        padding-left: 0.5rem;
-        padding-right: 0.5rem;
-      }
     }
 
     .laudo-header {
@@ -159,7 +146,7 @@
     .dark .laudo-header { border-bottom-color: #34d399; }
 
     .logo-cabecalho {
-      max-height: 45px;
+      max-height: 40px;
       width: auto;
       object-fit: contain;
     }
@@ -297,18 +284,53 @@
     }
     .dark .a4-footer { border-top-color: #27272a; color: #a1a1aa; }
 
-    aside#appSidebar.sidebar-collapsed {
-      width: 0 !important;
-      min-width: 0 !important;
-      padding: 0 !important;
-      overflow: hidden !important;
-      border: none !important;
+    /* COMPORTAMENTO DO MENU LATERAL EM DISPOSITIVOS MÓVEIS (DRAWER / OVERLAY) */
+    @media (max-width: 767px) {
+      aside#appSidebar {
+        position: fixed !important;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: 85vw !important;
+        max-width: 340px !important;
+        z-index: 50 !important;
+        box-shadow: 4px 0 25px rgba(0,0,0,0.3);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      }
+
+      aside#appSidebar.sidebar-collapsed {
+        transform: translateX(-100%) !important;
+        width: 85vw !important;
+        min-width: unset !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+      }
+
+      #sidebarOverlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(2px);
+        z-index: 45;
+        transition: opacity 0.3s ease;
+      }
+    }
+
+    @media (min-width: 768px) {
+      aside#appSidebar.sidebar-collapsed {
+        width: 0 !important;
+        min-width: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        border: none !important;
+      }
+      #sidebarOverlay { display: none !important; }
     }
 
     @page { size: A4 portrait; margin: 0mm !important; }
     @media print {
       body, html { background: #ffffff !important; overflow: visible !important; height: auto !important; width: 210mm !important; }
-      header, nav, aside, #zoomControlFloating, .no-print { display: none !important; }
+      header, nav, aside, #zoomControlFloating, #sidebarOverlay, .no-print { display: none !important; }
       main, #previewContainer { background: #ffffff !important; padding: 0 !important; margin: 0 !important; overflow: visible !important; width: 210mm !important; }
       .a4-wrapper-scale { transform: none !important; padding-bottom: 0 !important; }
       .page-a4 { box-shadow: none !important; margin: 0 !important; width: 210mm !important; height: 297mm !important; page-break-after: always !important; }
@@ -317,19 +339,23 @@
 </head>
 <body class="bg-slate-100 dark:bg-zinc-950 text-slate-800 dark:text-zinc-100 h-screen flex flex-col transition-colors duration-300 overflow-hidden">
 
+  <!-- SOBREPOSIÇÃO ESCURA DO MENU NO MOBILE -->
+  <div id="sidebarOverlay" class="hidden opacity-0" onclick="AppInterface.setPainelAberto(false)"></div>
+
   <!-- CABEÇALHO DA APLICAÇÃO -->
   <header class="bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 sticky top-0 z-30 shadow-sm shrink-0">
-    <div class="max-w-7xl mx-auto px-2 sm:px-6 h-12 flex items-center justify-between gap-1">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
       
-      <div class="flex items-center gap-1.5 shrink-0">
-        <!-- Botão Toggle do Menu Hamburger -->
-        <button onclick="AppInterface.togglePanelCollapse()" class="p-1.5 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 hover:bg-slate-200 focus:outline-none" title="Abrir/Fechar Menu">
+      <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+        <!-- Botão Toggle do Menu Visível no Telemóvel -->
+        <button onclick="AppInterface.togglePanelCollapse()" class="p-2 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 hover:bg-slate-200 focus:outline-none" title="Menu Ferramentas">
           <i data-lucide="menu" class="w-5 h-5"></i>
         </button>
-        <span class="text-xs font-bold text-vet-600 dark:text-emerald-400">Setvet</span>
+
+        <img src="image_5992ee00.jpg" alt="Setvet Diagnóstico Veterinário" class="logo-cabecalho">
       </div>
 
-      <div class="flex items-center gap-1 sm:gap-2 shrink-0">
+      <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
         <div class="hidden md:flex items-center gap-2 text-xs font-semibold bg-slate-50 dark:bg-zinc-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-700">
           <span class="text-slate-400 dark:text-zinc-500">Arquivo:</span>
           <span id="label-filename" class="font-mono text-vet-600 dark:text-emerald-400 truncate max-w-[200px]">Laudo_Thor.pdf</span>
@@ -339,23 +365,23 @@
           </button>
         </div>
 
-        <a href="historico/laudos_salvos.html" class="inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg text-[11px] sm:text-xs font-semibold bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-300 dark:hover:bg-zinc-700 transition-all shadow-sm shrink-0">
-          <i data-lucide="folder-archive" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
-          <span class="hidden sm:inline">Salvos</span>
+        <a href="historico/laudos_salvos.html" class="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-300 dark:hover:bg-zinc-700 transition-all shadow-sm shrink-0">
+          <i data-lucide="folder-archive" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Laudos Salvos</span>
         </a>
 
-        <button onclick="salvarLaudoAtualNaGaleria()" class="inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg text-[11px] sm:text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-sm shrink-0" title="Salvar no Histórico">
-          <i data-lucide="save" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+        <button onclick="salvarLaudoAtualNaGaleria()" class="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-sm shrink-0" title="Salvar no Histórico">
+          <i data-lucide="save" class="w-4 h-4"></i>
           <span class="hidden sm:inline">Salvar</span>
         </button>
 
-        <button onclick="sharePdf()" class="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-semibold bg-vet-600 hover:bg-vet-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white transition-all shadow-sm shrink-0">
-          <i data-lucide="printer" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
-          <span class="hidden sm:inline">PDF</span>
+        <button onclick="sharePdf()" class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-vet-600 hover:bg-vet-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white transition-all shadow-sm shrink-0">
+          <i data-lucide="printer" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Imprimir / Salvar PDF</span>
           <span class="sm:hidden">PDF</span>
         </button>
 
-        <button onclick="AppInterface.toggleDarkMode()" class="p-1.5 sm:p-2 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 hover:border-vet-600 dark:hover:border-emerald-400 transition-colors shrink-0" title="Alternar Modo Escuro">
+        <button onclick="AppInterface.toggleDarkMode()" class="p-2 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 hover:border-vet-600 dark:hover:border-emerald-400 transition-colors shrink-0" title="Alternar Modo Escuro">
           <i data-lucide="sun" class="w-4 h-4 hidden dark:block"></i>
           <i data-lucide="moon" class="w-4 h-4 block dark:hidden"></i>
         </button>
@@ -396,11 +422,8 @@
 
   <div class="flex-1 flex overflow-hidden relative">
     
-    <!-- OVERLAY PARA MOBILE -->
-    <div id="sidebarOverlay" class="fixed inset-0 bg-black/50 z-10 hidden opacity-0 transition-opacity duration-300" onclick="AppInterface.togglePanelCollapse(true)"></div>
-
-    <!-- PAINEL LATERAL ESQUERDO -->
-    <aside id="appSidebar" class="relative w-80 sm:w-96 bg-white dark:bg-zinc-900 border-r border-slate-200 dark:border-zinc-800 flex flex-col h-full z-20 transition-all duration-300 ease-in-out shrink-0">
+    <!-- PAINEL LATERAL ESQUERDO (GA VETA OVERLAY NO MOBILE) -->
+    <aside id="appSidebar" class="relative w-80 sm:w-96 bg-white dark:bg-zinc-900 border-r border-slate-200 dark:border-zinc-800 flex flex-col h-full transition-all duration-300 ease-in-out shrink-0">
 
       <button onclick="AppInterface.togglePanelCollapse()" id="btn-toggle-sidebar-edge" title="Recolher/Expandir Painel" class="absolute -right-3.5 top-4 z-30 w-7 h-7 bg-white dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-full shadow-md flex items-center justify-center text-slate-600 dark:text-zinc-300 hover:bg-vet-50 dark:hover:bg-zinc-700 hover:text-vet-600 transition-all">
         <i data-lucide="chevron-left" id="icon-sidebar-toggle" class="w-4 h-4"></i>
@@ -628,7 +651,7 @@
     </aside>
 
     <!-- ÁREA CINZA DE PRÉ-VISUALIZAÇÃO DE LAUDO -->
-    <main tabindex="0" id="previewContainer" class="p-6 sm:p-8 bg-slate-600 dark:bg-zinc-900 flex flex-col items-center cursor-default flex-1 w-full h-full">
+    <main tabindex="0" id="previewContainer" class="p-4 sm:p-8 bg-slate-600 dark:bg-zinc-900 flex flex-col items-center cursor-default flex-1 w-full h-full">
       <div id="a4WrapperScale" class="a4-wrapper-scale" style="--a4-scale: 1.00;">
       </div>
     </main>
