@@ -1,6 +1,6 @@
 /**
  * Setvet - Sistema Diagnóstico & Confecção de Laudo
- * Arquivo: script.js (Código Principal Atualizado com Alternância Automática de Tema para PDF)
+ * Arquivo: script.js (Código Principal Atualizado)
  */
 
 function initIcons() { 
@@ -603,21 +603,51 @@ async function carregarLaudoParaEdicao() {
 }
 
 // =========================================================
-// GERADOR DE PDF 100% MODO CLARO (COM ALTERNÂNCIA AUTOMÁTICA)
+// GERADOR DE PDF EFICIENTE E COMPATÍVEL (MOBILE E PC)
 // =========================================================
 async function sharePdf() {
-  const container = document.getElementById('a4WrapperScale');
-  if (!container) return;
+  const containerOriginal = document.getElementById('a4WrapperScale');
+  if (!containerOriginal) return;
 
   const labelFile = document.getElementById('label-filename');
   const filename = labelFile ? labelFile.innerText.trim() : 'Laudo_UltrasVet.pdf';
 
-  // 1. Alterna temporariamente o tablet/PC para o modo claro para evitar conflitos de cores
-  const estavaNoModoEscuro = document.documentElement.classList.contains('dark');
-  if (estavaNoModoEscuro) {
-    document.documentElement.classList.remove('dark');
-  }
+  // 1. Clona o contêiner A4
+  const cloneWrapper = containerOriginal.cloneNode(true);
 
+  // 2. Remove elementos interativos ou indesejados da captura
+  cloneWrapper.querySelectorAll('.no-print, .delete-photo-btn, button').forEach(el => el.remove());
+
+  // 3. Força a remoção de temas escuros e estipula regras estritas de impressão A4
+  cloneWrapper.querySelectorAll('.dark, .page-a4').forEach(el => {
+    el.classList.remove('dark');
+  });
+
+  const tempContainer = document.createElement('div');
+  tempContainer.id = 'pdf-capture-temp-wrapper';
+  tempContainer.style.position = 'fixed';
+  tempContainer.style.left = '-9999px';
+  tempContainer.style.top = '0';
+  tempContainer.style.width = '210mm';
+  tempContainer.style.background = '#ffffff';
+  tempContainer.style.color = '#1e293b';
+  tempContainer.style.setProperty('--a4-scale', '1');
+  tempContainer.style.transform = 'none';
+
+  // Força estilo limpo nas folhas A4 clonadas
+  const paginasClonadas = cloneWrapper.querySelectorAll('.page-a4');
+  paginasClonadas.forEach(p => {
+    p.style.backgroundColor = '#ffffff';
+    p.style.color = '#1e293b';
+    p.style.boxShadow = 'none';
+    p.style.transform = 'none';
+    p.style.margin = '0';
+  });
+
+  tempContainer.appendChild(cloneWrapper);
+  document.body.appendChild(tempContainer);
+
+  // 4. Configuração otimizada para html2pdf (Mobile & Desktop)
   const opt = {
     margin: 0,
     filename: filename,
@@ -628,38 +658,8 @@ async function sharePdf() {
       allowTaint: true,
       logging: false,
       backgroundColor: '#ffffff',
-      windowWidth: 794, // Largura padrão A4 a 96 DPI
-      onclone: (clonedDoc) => {
-        // Força Modo Claro absoluto na cópia virtual do PDF
-        clonedDoc.documentElement.classList.remove('dark');
-        if (clonedDoc.body) clonedDoc.body.classList.remove('dark');
-
-        // Remove a escala de zoom do tablet para capturar em tamanho real 100% A4
-        const wrapper = clonedDoc.getElementById('a4WrapperScale');
-        if (wrapper) {
-          wrapper.style.transform = 'none';
-          wrapper.style.padding = '0';
-          wrapper.style.margin = '0 auto';
-        }
-
-        // Garante fundo branco e texto escuro em todas as folhas A4 geradas
-        const paginas = clonedDoc.querySelectorAll('.page-a4');
-        paginas.forEach(p => {
-          p.style.backgroundColor = '#ffffff';
-          p.style.color = '#1e293b';
-          p.style.boxShadow = 'none';
-          p.style.transform = 'none';
-          p.style.margin = '0 auto';
-        });
-
-        // Garante a cor original do cabeçalho e títulos Setvet (Verde oficial)
-        clonedDoc.querySelectorAll('.a4-section-title, .a4-organ-name').forEach(el => {
-          el.style.color = '#0F5A47';
-        });
-
-        // Remove botões e elementos interativos do PDF final
-        clonedDoc.querySelectorAll('.no-print, .delete-photo-btn, button').forEach(el => el.remove());
-      }
+      scrollX: 0,
+      scrollY: 0
     },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true },
     pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
@@ -667,21 +667,23 @@ async function sharePdf() {
 
   try {
     if (typeof html2pdf !== 'undefined') {
-      await html2pdf().set(opt).from(container).save();
+      await html2pdf().set(opt).from(cloneWrapper).save();
     } else {
-      window.print();
+      throw new Error('Biblioteca html2pdf não carregada');
     }
   } catch (err) {
-    console.error("Erro ao gerar PDF com html2pdf, recorrendo à impressão nativa:", err);
+    console.warn("Alternando para impressão nativa do navegador:", err);
+
+    // Fallback: Impressão Nativa garantindo modo claro temporário
+    const estavaModoEscuro = document.documentElement.classList.contains('dark');
+    if (estavaModoEscuro) document.documentElement.classList.remove('dark');
+
     window.print();
+
+    if (estavaModoEscuro) document.documentElement.classList.add('dark');
   } finally {
-    // 2. Restaura automaticamente o modo escuro no tablet logo após a exportação do PDF
-    if (estavaNoModoEscuro) {
-      document.documentElement.classList.add('dark');
-    }
-    // Reaplicamos a escala de visualização correta para o usuário continuar trabalhando
-    if (typeof ControleZoom !== 'undefined' && ControleZoom.aplicarEscala) {
-      ControleZoom.aplicarEscala();
+    if (tempContainer.parentNode) {
+      document.body.removeChild(tempContainer);
     }
   }
 }
