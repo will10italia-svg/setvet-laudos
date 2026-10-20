@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Setvet - Sistema Diagnóstico & Confecção de Laudo</title>
 
-  <!-- Configuração PWA -->
+  <!-- Configuração PWA / Ícone na Tela Inicial -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0F5A47">
 
@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 
-  <!-- Tailwind CSS e Bibliotecas -->
+  <!-- Framework CSS Tailwind e Bibliotecas Externas -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous"></script>
@@ -75,6 +75,7 @@
       border-radius: 2px;
     }
 
+    /* Container de escala adaptado para touch pan e pinch */
     .a4-wrapper-scale {
       display: flex;
       flex-direction: column;
@@ -90,14 +91,14 @@
       touch-action: none;
     }
 
-    /* FOLHA A4 - MODO CLARO PADRÃO */
+    /* Folha A4 sempre com fundo branco puro para leitura e PDF corretos */
     .page-a4 {
       background-color: #ffffff !important;
       color: #1e293b !important;
-      width: 210mm !important;
-      min-width: 210mm !important;
-      height: 297mm !important;
-      min-height: 297mm !important;
+      width: 210mm;
+      min-width: 210mm;
+      height: 297mm;
+      min-height: 297mm;
       padding: 15mm 15mm 18mm 15mm;
       box-shadow: 0 10px 25px rgba(0,0,0,0.25);
       border-radius: 2px;
@@ -107,7 +108,7 @@
       overflow: hidden;
     }
 
-    /* Marca d'água com imagem real */
+    /* Sua marca d'água restaurada com a imagem original */
     .page-a4::before {
       content: "";
       position: absolute;
@@ -116,53 +117,13 @@
       transform: translate(-50%, -50%);
       width: 380px;
       height: 380px;
-      background-image: url('logo.png');
+      background-image: url('image_5992ee00.jpg');
       background-repeat: no-repeat;
       background-position: center;
       background-size: contain;
       opacity: 0.04;
       pointer-events: none;
       z-index: 0;
-    }
-
-    /* MODO NOTURNO FORÇADO NA PRÉ-VISUALIZAÇÃO A4 */
-    .dark .page-a4 {
-      background-color: #09090b !important;
-      color: #fafafa !important;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.8);
-    }
-    
-    .dark .page-a4 .a4-section-title {
-      color: #34d399 !important;
-      border-bottom-color: #27272a !important;
-    }
-
-    .dark .page-a4 .a4-organ-name {
-      color: #34d399 !important;
-    }
-
-    .dark .page-a4 .patient-card-clean {
-      border-color: #3f3f46 !important;
-    }
-
-    .dark .page-a4 .card-label {
-      color: #a1a1aa !important;
-    }
-
-    .dark .page-a4 .card-value,
-    .dark .page-a4 .a4-organ-content,
-    .dark .page-a4 .general-phrase-item,
-    .dark .page-a4 .achado-adicional-highlight {
-      color: #f4f4f5 !important;
-    }
-
-    .dark .page-a4 .signature-line {
-      border-top-color: #a1a1aa !important;
-    }
-
-    .dark .page-a4 .a4-footer {
-      border-top-color: #27272a !important;
-      color: #a1a1aa !important;
     }
 
     .page-content { height: calc(297mm - 15mm - 18mm - 10mm); overflow: hidden; position: relative; z-index: 1; }
@@ -175,6 +136,13 @@
       height: 100%;
       outline: none;
       position: relative;
+    }
+
+    @media (max-width: 768px) {
+      header .max-w-7xl {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+      }
     }
 
     .laudo-header {
@@ -194,14 +162,14 @@
 
     .patient-card-clean {
       background-color: transparent !important;
-      border: 1px solid #cbd5e1;
+      border: 1px solid #cbd5e1 !important;
       border-radius: 6px;
       padding: 0.65rem 0.85rem;
       margin-bottom: 0.75rem;
     }
 
-    .card-label { color: #64748b; font-weight: 700; font-size: 9px; text-transform: uppercase; display: block; }
-    .card-value { color: #1e293b; font-weight: 600; font-size: 0.82rem; }
+    .card-label { color: #64748b !important; font-weight: 700; font-size: 9px; text-transform: uppercase; display: block; }
+    .card-value { color: #1e293b !important; font-weight: 600; font-size: 0.82rem; }
 
     .a4-section-title {
       font-size: 0.85rem;
@@ -230,13 +198,13 @@
       margin-bottom: 4px;
       font-size: 0.82rem;
       line-height: 1.45;
-      background-color: transparent !important;
+      color: #1e293b !important;
     }
 
     .achado-adicional-highlight {
       border-left: 2px solid #10b981 !important;
       background-color: transparent !important;
-      color: #334155;
+      color: #334155 !important;
       padding: 2px 0px 2px 8px !important;
       margin-top: 2px !important;
       margin-bottom: 4px !important;
@@ -320,8 +288,7 @@
       header, nav, aside, #zoomControlFloating, .no-print { display: none !important; }
       main, #previewContainer { background: #ffffff !important; padding: 0 !important; margin: 0 !important; overflow: visible !important; width: 210mm !important; }
       .a4-wrapper-scale { transform: none !important; padding-bottom: 0 !important; }
-      .page-a4 { background-color: #ffffff !important; color: #1e293b !important; box-shadow: none !important; margin: 0 !important; width: 210mm !important; height: 297mm !important; page-break-after: always !important; }
-      .page-a4 * { color: #1e293b !important; }
+      .page-a4 { box-shadow: none !important; margin: 0 !important; width: 210mm !important; height: 297mm !important; page-break-after: always !important; }
     }
   </style>
 </head>
@@ -332,6 +299,7 @@
     <div class="max-w-7xl mx-auto px-2 sm:px-6 h-12 flex items-center justify-between gap-1">
       
       <div class="flex items-center gap-1.5 shrink-0">
+        <!-- Botão Toggle do Menu Hamburger -->
         <button onclick="AppInterface.togglePanelCollapse()" class="p-1.5 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 hover:bg-slate-200 focus:outline-none" title="Abrir/Fechar Menu">
           <i data-lucide="menu" class="w-5 h-5"></i>
         </button>
