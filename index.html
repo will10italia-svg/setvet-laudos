@@ -108,24 +108,25 @@
       transition: background-color 0.3s, color 0.3s;
     }
 
+    /* Marca d'água atualizada com o nome correto do ficheiro '7v' */
     .page-a4::before {
-      content: "SETVET";
+      content: "";
       position: absolute;
       top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%) rotate(-30deg);
-      font-size: 5rem;
-      font-weight: 800;
-      letter-spacing: 0.5em;
-      color: #0F5A47;
-      opacity: 0.03;
+      transform: translate(-50%, -50%);
+      width: 380px;
+      height: 380px;
+      background-image: url('7v');
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: contain;
+      opacity: 0.05;
       pointer-events: none;
       z-index: 0;
-      white-space: nowrap;
     }
 
     .dark .page-a4 { background-color: #18181b; color: #f4f4f5; }
-    .dark .page-a4::before { color: #34d399; opacity: 0.04; }
 
     .page-content { height: calc(297mm - 15mm - 18mm - 10mm); overflow: hidden; position: relative; z-index: 1; }
 
