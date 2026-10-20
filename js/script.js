@@ -756,9 +756,6 @@ const MotorLaudo = {
   }
 };
 
-// =========================================================
-// FUNÇÃO ATUALIZADA PARA SALVAR NA NUVEM (FIRESTORE)
-// =========================================================
 async function salvarLaudoAtualNaGaleria() {
   const val = id => document.getElementById(id)?.value || '';
   const paciente = val('p-paciente') || 'Paciente';
@@ -847,6 +844,9 @@ async function carregarLaudoParaEdicao() {
   }
 }
 
+// =========================================================
+// FUNÇÃO SHAREPDF COM REMOÇÃO AUTOMÁTICA DO DARK MODE
+// =========================================================
 async function sharePdf() {
   const container = document.getElementById('a4WrapperScale');
   if (!container) return;
@@ -854,6 +854,11 @@ async function sharePdf() {
   const filename = document.getElementById('label-filename')?.innerText || 'Laudo_UltrasVet.pdf';
 
   try {
+    // Desativa temporariamente o dark mode na raiz para garantir PDF limpo e com fundo branco
+    const htmlElement = document.documentElement;
+    const estavaDark = htmlElement.classList.contains('dark');
+    if (estavaDark) htmlElement.classList.remove('dark');
+
     const clone = container.cloneNode(true);
     clone.querySelectorAll('.no-print, .delete-photo-btn').forEach(el => el.remove());
 
@@ -883,6 +888,10 @@ async function sharePdf() {
     if (tempContainer.parentNode) {
       document.body.removeChild(tempContainer);
     }
+
+    // Restaura o dark mode na interface se o utilizador o estava a usar
+    if (estavaDark) htmlElement.classList.add('dark');
+
   } catch (err) {
     console.warn("Alternando para impressão nativa:", err);
     window.print();
