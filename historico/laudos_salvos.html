@@ -64,7 +64,7 @@
     }
   </style>
 </head>
-<body class="bg-slate-100 dark:bg-zinc-950 text-slate-800 dark:text-zinc-100 min-h-screen flex flex-col transition-colors duration-300" onload="carregarLaudos()">
+<body class="bg-slate-100 dark:bg-zinc-950 text-slate-800 dark:text-zinc-100 min-h-screen flex flex-col transition-colors duration-300">
 
   <header class="bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 sticky top-0 z-30 shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -150,7 +150,7 @@
         <i data-lucide="folder-search" class="w-8 h-8"></i>
       </div>
       <h3 class="text-base font-bold mb-1">Nenhum laudo encontrado</h3>
-      <p class="text-xs text-slate-500 dark:text-zinc-400 max-w-sm mb-4">Não existem laudos guardados correspondentes aos critérios de pesquisa ou filtros aplicados.</p>
+      <p class="text-xs text-slate-500 dark:text-zinc-400 max-w-sm mb-4">Não existem laudos guardados na nuvem correspondentes aos critérios de pesquisa ou filtros aplicados.</p>
       <a href="../index.html" class="bg-vet-600 hover:bg-vet-700 text-white px-4 py-2 rounded-xl text-xs font-semibold inline-block">
         Criar Novo Laudo
       </a>
@@ -199,57 +199,63 @@
         <i data-lucide="alert-triangle" class="w-6 h-6"></i>
       </div>
       <div>
-        <h3 class="text-sm font-bold mb-1">Eliminar Laudo?</h3>
-        <p class="text-xs text-slate-500 dark:text-zinc-400">Tem a certeza de que deseja eliminar permanentemente este registo do sistema?</p>
+        <h3 class="text-sm font-bold mb-1">Eliminar Laudo da Nuvem?</h3>
+        <p class="text-xs text-slate-500 dark:text-zinc-400">Tem a certeza de que deseja eliminar permanentemente este registo da nuvem?</p>
       </div>
       <div class="flex gap-2 justify-center pt-2">
         <button onclick="fecharModalDelete()" class="px-4 py-2 bg-slate-200 dark:bg-zinc-700 hover:bg-slate-300 font-semibold rounded-xl text-xs transition-colors">Cancelar</button>
-        <button id="confirmDeleteBtn" onclick="executarEliminar()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl text-xs transition-colors">Eliminar</button>
+        <button id="confirmDeleteBtn" onclick="executarEliminarNuvem()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl text-xs transition-colors">Eliminar</button>
       </div>
     </div>
   </div>
 
-  <script>
-    function initIcons() {
-      lucide.createIcons();
-    }
+  <!-- SDK DO FIREBASE E LÓGICA DE DADOS -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    let laudos = [];
+    const firebaseConfig = {
+      apiKey: "AIzaSyBNbpvlQ9kctl1TP_vw4_BXBVEumL9_P2c",
+      authDomain: "setvet-laudos-cloud.firebaseapp.com",
+      projectId: "setvet-laudos-cloud",
+      storageBucket: "setvet-laudos-cloud.firebasestorage.app",
+      messagingSenderId: "939149869953",
+      appId: "1:939149869953:web:26a7f33262ca05f8c81e80"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.laudos = [];
     let currentViewId = null;
     let deleteTargetId = null;
 
-    function toggleDarkMode() {
+    window.toggleDarkMode = function() {
       const html = document.documentElement;
       html.classList.toggle('dark');
       localStorage.setItem('ultrasvet_theme', html.classList.contains('dark') ? 'dark' : 'light');
-    }
+    };
 
     const savedTheme = localStorage.getItem('ultrasvet_theme');
     if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       document.documentElement.classList.add('dark');
     }
 
-    function carregarLaudos() {
-      const stored = localStorage.getItem('ultrasvet_laudos_salvos');
-      if (stored) {
-        try {
-          laudos = JSON.parse(stored);
-        } catch (e) {
-          laudos = [];
-        }
-      } else {
-        laudos = [];
+    window.carregarLaudosNuvem = async function() {
+      try {
+        const querySnapshot = await getDocs(collection(db, "laudos"));
+        window.laudos = [];
+        querySnapshot.forEach((docSnap) => {
+          window.laudos.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        renderGallery();
+        atualizarEstatisticas();
+      } catch (error) {
+        console.error("Erro ao carregar laudos da nuvem:", error);
       }
-      renderGallery();
-      atualizarEstatisticas();
-    }
+    };
 
-    function guardarLaudosStorage() {
-      localStorage.setItem('ultrasvet_laudos_salvos', JSON.stringify(laudos));
-      atualizarEstatisticas();
-    }
-
-    function atualizarEstatisticas() {
+    window.atualizarEstatisticas = function() {
       const total = laudos.length;
       const salvos = laudos.filter(l => l.estado === 'Salvo').length;
       const rascunhos = laudos.filter(l => l.estado === 'Rascunho').length;
@@ -257,9 +263,9 @@
       document.getElementById('stat-total').textContent = total;
       document.getElementById('stat-salvos').textContent = salvos;
       document.getElementById('stat-rascunhos').textContent = rascunhos;
-    }
+    };
 
-    function renderGallery() {
+    window.renderGallery = function() {
       const grid = document.getElementById('galleryGrid');
       const emptyState = document.getElementById('emptyState');
       
@@ -330,19 +336,19 @@
         `;
         grid.appendChild(card);
       });
-      initIcons();
-    }
+      lucide.createIcons();
+    };
 
-    function filtrarLaudos() {
+    window.filtrarLaudos = function() {
       renderGallery();
-    }
+    };
 
-    function redefinirFiltros() {
+    window.redefinirFiltros = function() {
       document.getElementById('searchInput').value = '';
       document.getElementById('filterEspecie').value = '';
       document.getElementById('filterEstado').value = '';
       renderGallery();
-    }
+    };
 
     function formatarData(dataStr) {
       if (!dataStr) return '---';
@@ -354,7 +360,7 @@
       }
     }
 
-    function abrirModalView(id) {
+    window.abrirModalView = function(id) {
       const l = laudos.find(item => item.id === id);
       if (!l) return;
       currentViewId = id;
@@ -363,8 +369,7 @@
       document.getElementById('viewModalSubtitle').textContent = `Prontuário: ${l.prontuario || '---'}`;
 
       const body = document.getElementById('viewModalBody');
-      
-      const conteudoHtml = l.conteudoHtml || `<div class="p-6 text-sm whitespace-pre-wrap">${l.resumoTexto || l.conteudo || 'Sem conteúdo registado.'}</div>`;
+      const conteudoHtml = l.conteudoHtml || `<div class="p-6 text-sm whitespace-pre-wrap">${l.resumoTexto || 'Sem conteúdo registado.'}</div>`;
       
       body.innerHTML = `
         <div class="modal-page-a4 rounded-xl border border-slate-300">
@@ -375,50 +380,58 @@
       const modal = document.getElementById('viewModal');
       modal.classList.remove('hidden');
       modal.classList.add('flex');
-    }
+    };
 
-    function fecharModalView() {
+    window.fecharModalView = function() {
       const modal = document.getElementById('viewModal');
       modal.classList.remove('flex');
       modal.classList.add('hidden');
       currentViewId = null;
-    }
+    };
 
-    function abrirModalEditar(id) {
+    window.abrirModalEditar = function(id) {
       window.location.href = `../index.html?editar=${id}`;
-    }
+    };
 
-    function editarLaudoAtual() {
+    window.editarLaudoAtual = function() {
       if (currentViewId) {
         abrirModalEditar(currentViewId);
       }
-    }
+    };
 
-    function confirmarEliminar(id) {
+    window.confirmarEliminar = function(id) {
       deleteTargetId = id;
       const modal = document.getElementById('deleteModal');
       modal.classList.remove('hidden');
       modal.classList.add('flex');
-    }
+    };
 
-    function fecharModalDelete() {
+    window.fecharModalDelete = function() {
       deleteTargetId = null;
       const modal = document.getElementById('deleteModal');
       modal.classList.remove('flex');
       modal.classList.add('hidden');
-    }
+    };
 
-    function executarEliminar() {
+    window.executarEliminarNuvem = async function() {
       if (!deleteTargetId) return;
-      laudos = laudos.filter(l => l.id !== deleteTargetId);
-      guardarLaudosStorage();
-      fecharModalDelete();
-      renderGallery();
-    }
+      try {
+        await deleteDoc(doc(db, "laudos", deleteTargetId));
+        fecharModalDelete();
+        window.carregarLaudosNuvem();
+      } catch (error) {
+        console.error("Erro ao eliminar da nuvem:", error);
+      }
+    };
 
-    function imprimirLaudoAtual() {
+    window.imprimirLaudoAtual = function() {
       window.print();
-    }
+    };
+
+    // Executa ao carregar a página
+    window.addEventListener('DOMContentLoaded', () => {
+      window.carregarLaudosNuvem();
+    });
   </script>
 </body>
 </html>
