@@ -1,27 +1,3 @@
-// Configuração do Tema Tailwind
-tailwind.config = {
-  darkMode: 'class',
-  theme: {
-    extend: {
-      colors: {
-        vet: {
-          50: '#ecfdf5',
-          100: '#d1fae5',
-          500: '#059669',
-          600: '#0F5A47',
-          700: '#0a3f32',
-          800: '#064e3b',
-          900: '#022c22'
-        }
-      },
-      fontFamily: {
-        sans: ['Inter', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace']
-      }
-    }
-  }
-};
-
 function initIcons() { if (window.lucide) lucide.createIcons(); }
 
 const CONFIGURACAO_ORGAOS = window.CONFIGURACAO_ORGAOS || {};
