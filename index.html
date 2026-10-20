@@ -267,29 +267,9 @@
       border: none !important;
     }
 
-    /* Regras Estritas de Impressão (Força Modo Claro no PDF/Impressora) */
     @page { size: A4 portrait; margin: 0mm !important; }
     @media print {
-      body, html { 
-        background: #ffffff !important; 
-        color: #1e293b !important;
-        overflow: visible !important; 
-        height: auto !important; 
-        width: 210mm !important; 
-      }
-      .dark, .dark * {
-        background-color: transparent !important;
-        color: #1e293b !important;
-        border-color: #cbd5e1 !important;
-      }
-      .dark .page-a4 {
-        background-color: #ffffff !important;
-        color: #1e293b !important;
-      }
-      .dark .a4-section-title, .dark .a4-organ-name, .dark .laudo-header {
-        color: #0F5A47 !important;
-        border-color: #0F5A47 !important;
-      }
+      body, html { background: #ffffff !important; overflow: visible !important; height: auto !important; width: 210mm !important; }
       header, nav, aside, #zoomControlFloating, .no-print { display: none !important; }
       main, #previewContainer { background: #ffffff !important; padding: 0 !important; margin: 0 !important; overflow: visible !important; width: 210mm !important; }
       .a4-wrapper-scale { transform: none !important; padding-bottom: 0 !important; }
