@@ -401,24 +401,15 @@ const AppInterface = {
     EstadoApp.painelAberto = aberto;
     const sidebar = document.getElementById('appSidebar');
     const toggleIcon = document.getElementById('icon-sidebar-toggle');
-    const overlay = document.getElementById('sidebarOverlay');
 
     if (!sidebar) return;
 
     if (aberto) {
       sidebar.classList.remove('sidebar-collapsed');
       if (toggleIcon) toggleIcon.setAttribute('data-lucide', 'chevron-left');
-      if (window.innerWidth <= 1024 && overlay) {
-        overlay.classList.remove('hidden');
-        setTimeout(() => overlay.classList.remove('opacity-0'), 10);
-      }
     } else {
       sidebar.classList.add('sidebar-collapsed');
       if (toggleIcon) toggleIcon.setAttribute('data-lucide', 'chevron-right');
-      if (overlay) {
-        overlay.classList.add('opacity-0');
-        setTimeout(() => overlay.classList.add('hidden'), 300);
-      }
     }
     initIcons();
   },
@@ -765,6 +756,9 @@ const MotorLaudo = {
   }
 };
 
+// =========================================================
+// FUNÇÃO ATUALIZADA PARA SALVAR NA NUVEM (FIRESTORE)
+// =========================================================
 async function salvarLaudoAtualNaGaleria() {
   const val = id => document.getElementById(id)?.value || '';
   const paciente = val('p-paciente') || 'Paciente';
@@ -895,22 +889,13 @@ async function sharePdf() {
   }
 }
 
-// Controle de Zoom, Arrastar (Pan) e Toque (Pinch-to-Zoom)
 const ControleZoom = {
   escala: 1.0,
-  isDragging: false,
-  startX: 0,
-  startY: 0,
-  scrollLeft: 0,
-  scrollTop: 0,
-  initialDistance: null,
-
+  
   obterEscalaInicial: function() {
-    const larguraEcra = window.innerWidth;
-    if (larguraEcra <= 480) return 0.52;  // Telemóveis pequenos
-    if (larguraEcra <= 768) return 0.60;  // Telemóveis verticais
-    if (larguraEcra <= 1024) return 0.75; // Tablets
-    return 1.0;                           // Computadores
+    if (window.innerWidth <= 768) return 0.70;  // 70% para telemóveis
+    if (window.innerWidth <= 1024) return 0.85; // 85% para tablets (Galaxy Tab A11)
+    return 1.0;                                 // 100% para computadores
   },
 
   ajustarZoomInicial: function() {
@@ -927,12 +912,12 @@ const ControleZoom = {
   },
   
   zoomIn: function() {
-    this.escala = Math.min(2.0, this.escala + 0.1);
+    this.escala = Math.min(1.8, this.escala + 0.1);
     this.aplicarEscala();
   },
   
   zoomOut: function() {
-    this.escala = Math.max(0.3, this.escala - 0.1);
+    this.escala = Math.max(0.4, this.escala - 0.1);
     this.aplicarEscala();
   },
   
@@ -943,84 +928,6 @@ const ControleZoom = {
   atualizarBadge: function(texto) {
     const el = document.getElementById('zoom-level-text');
     if (el) el.textContent = texto;
-  },
-
-  initTouchAndDrag: function() {
-    const container = document.getElementById('previewContainer');
-    if (!container) return;
-
-    // --- MOUSE DRAG (Desktop Pan) ---
-    container.addEventListener('mousedown', (e) => {
-      if (e.target.closest('.page-a4') && !e.target.closest('[contenteditable="true"]')) {
-        this.isDragging = true;
-        this.startX = e.clientX;
-        this.startY = e.clientY;
-        this.scrollLeft = container.scrollLeft;
-        this.scrollTop = container.scrollTop;
-      }
-    });
-
-    window.addEventListener('mousemove', (e) => {
-      if (!this.isDragging) return;
-      e.preventDefault();
-      const x = e.clientX;
-      const y = e.clientY;
-      container.scrollLeft = this.scrollLeft - (x - this.startX);
-      container.scrollTop = this.scrollTop - (y - this.startY);
-    });
-
-    window.addEventListener('mouseup', () => {
-      this.isDragging = false;
-    });
-
-    // --- TOUCH GESTURES (Mobile / Tablet Pinch & Pan) ---
-    container.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 1) {
-        if (!e.target.closest('[contenteditable="true"]')) {
-          this.isDragging = true;
-          this.startX = e.touches[0].clientX;
-          this.startY = e.touches[0].clientY;
-          this.scrollLeft = container.scrollLeft;
-          this.scrollTop = container.scrollTop;
-        }
-      } else if (e.touches.length === 2) {
-        this.isDragging = false;
-        this.initialDistance = Math.hypot(
-          e.touches[0].clientX - e.touches[1].clientX,
-          e.touches[0].clientY - e.touches[1].clientY
-        );
-      }
-    }, { passive: false });
-
-    container.addEventListener('touchmove', (e) => {
-      if (e.touches.length === 1 && this.isDragging) {
-        e.preventDefault();
-        const x = e.touches[0].clientX;
-        const y = e.touches[0].clientY;
-        container.scrollLeft = this.scrollLeft - (x - this.startX);
-        container.scrollTop = this.scrollTop - (y - this.startY);
-      } else if (e.touches.length === 2 && this.initialDistance !== null) {
-        e.preventDefault();
-        const currentDistance = Math.hypot(
-          e.touches[0].clientX - e.touches[1].clientX,
-          e.touches[0].clientY - e.touches[1].clientY
-        );
-        const factor = currentDistance / this.initialDistance;
-        this.initialDistance = currentDistance;
-        
-        this.escala = Math.max(0.3, Math.min(2.0, this.escala * factor));
-        this.aplicarEscala();
-      }
-    }, { passive: false });
-
-    container.addEventListener('touchend', (e) => {
-      if (e.touches.length < 2) {
-        this.initialDistance = null;
-      }
-      if (e.touches.length === 0) {
-        this.isDragging = false;
-      }
-    });
   }
 };
 
@@ -1100,5 +1007,4 @@ window.onload = function() {
   }
   MotorLaudo.atualizarPaginasLaudo();
   ControleZoom.ajustarZoomInicial();
-  ControleZoom.initTouchAndDrag(); // Ativa suporte completo a toque e arrasto
 };
