@@ -91,10 +91,9 @@
       touch-action: none;
     }
 
-    /* Folha A4 sempre com fundo branco puro para leitura e PDF corretos */
     .page-a4 {
-      background-color: #ffffff !important;
-      color: #1e293b !important;
+      background-color: #ffffff;
+      color: #1e293b;
       width: 210mm;
       min-width: 210mm;
       height: 297mm;
@@ -106,9 +105,10 @@
       flex-shrink: 0;
       box-sizing: border-box;
       overflow: hidden;
+      transition: background-color 0.3s, color 0.3s;
     }
 
-    /* Sua marca d'água restaurada com a imagem original */
+    /* Marca d'água original com a imagem */
     .page-a4::before {
       content: "";
       position: absolute;
@@ -121,10 +121,12 @@
       background-repeat: no-repeat;
       background-position: center;
       background-size: contain;
-      opacity: 0.04;
+      opacity: 0.05;
       pointer-events: none;
       z-index: 0;
     }
+
+    .dark .page-a4 { background-color: #18181b; color: #f4f4f5; }
 
     .page-content { height: calc(297mm - 15mm - 18mm - 10mm); overflow: hidden; position: relative; z-index: 1; }
 
@@ -138,6 +140,7 @@
       position: relative;
     }
 
+    /* Ajustes para evitar overflow no cabeçalho em telemóveis */
     @media (max-width: 768px) {
       header .max-w-7xl {
         padding-left: 0.5rem;
@@ -153,6 +156,7 @@
       padding-bottom: 0.5rem;
       margin-bottom: 0.75rem;
     }
+    .dark .laudo-header { border-bottom-color: #34d399; }
 
     .logo-cabecalho {
       max-height: 45px;
@@ -167,9 +171,11 @@
       padding: 0.65rem 0.85rem;
       margin-bottom: 0.75rem;
     }
+    .dark .patient-card-clean { border-color: #3f3f46 !important; }
 
     .card-label { color: #64748b !important; font-weight: 700; font-size: 9px; text-transform: uppercase; display: block; }
     .card-value { color: #1e293b !important; font-weight: 600; font-size: 0.82rem; }
+    .dark .card-value { color: #f4f4f5 !important; }
 
     .a4-section-title {
       font-size: 0.85rem;
@@ -181,6 +187,7 @@
       margin-bottom: 10px;
       text-transform: uppercase;
     }
+    .dark .a4-section-title { color: #34d399; border-bottom-color: #27272a; }
 
     .a4-organ-item {
       margin-bottom: 6px;
@@ -190,6 +197,7 @@
     }
 
     .a4-organ-name { font-weight: bold; color: #0F5A47; display: inline; cursor: pointer; outline: none; }
+    .dark .a4-organ-name { color: #34d399; }
     .a4-organ-name:hover { text-decoration: underline; }
 
     .a4-organ-content { display: inline; background-color: transparent !important; }
@@ -198,8 +206,10 @@
       margin-bottom: 4px;
       font-size: 0.82rem;
       line-height: 1.45;
-      color: #1e293b !important;
+      color: #1e293b;
+      background-color: transparent !important;
     }
+    .dark .general-phrase-item { color: #f4f4f5 !important; }
 
     .achado-adicional-highlight {
       border-left: 2px solid #10b981 !important;
@@ -211,6 +221,10 @@
       font-size: 0.80rem;
       line-height: 1.4;
       font-weight: 400;
+    }
+    .dark .achado-adicional-highlight {
+      border-left-color: #34d399 !important;
+      color: #e4e4e7 !important;
     }
 
     .ref-text {
@@ -224,6 +238,7 @@
       background-color: transparent !important;
       border: none !important;
       font-weight: 400;
+      transition: color 0.2s ease;
     }
     
     .ref-text.is-alert, 
@@ -232,6 +247,11 @@
       color: #ef4444 !important;
       font-weight: 600;
     }
+
+    .dark .ref-text { color: #71717a; }
+    .dark .ref-text.is-alert, 
+    .dark .ref-text.alerta-vermelho,
+    .dark .ref-text .alerta-vermelho { color: #f87171 !important; }
 
     .gallery-grid-2x3 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; width: 100%; }
     .gallery-item-a4 {
@@ -243,6 +263,7 @@
       flex-direction: column;
       align-items: center;
     }
+    .dark .gallery-item-a4 { border-color: #27272a; }
 
     .image-wrapper-a4 {
       width: 100%;
@@ -259,6 +280,7 @@
 
     .signature-container { margin-top: 25px; display: flex; flex-direction: column; align-items: center; text-align: center; }
     .signature-line { width: 220px; border-top: 1px solid #1e293b; margin-bottom: 4px; }
+    .dark .signature-line { border-top-color: #f4f4f5; }
 
     .a4-footer {
       position: absolute;
@@ -273,6 +295,7 @@
       justify-content: flex-end;
       z-index: 1;
     }
+    .dark .a4-footer { border-top-color: #27272a; color: #a1a1aa; }
 
     aside#appSidebar.sidebar-collapsed {
       width: 0 !important;
