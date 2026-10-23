@@ -64,13 +64,26 @@ window.CONFIGURACAO_ORGAOS.estomago = {
   },
 
   obterLimiteReferencia: function() {
-    const especie = (document.getElementById('p-especie')?.value || 'Canino').toLowerCase();
-    const porte = document.getElementById('p-porte')?.value || 'Cão P';
+    const selectEspecie = document.getElementById('p-especie') || document.getElementById('especie');
+    const selectPorte = document.getElementById('p-porte') || document.getElementById('porte');
+
+    const especie = (selectEspecie?.value || 'Canino').toLowerCase();
+    const porte = (selectPorte?.value || 'Cão P').toLowerCase();
+
     const isFelino = especie.includes('felino') || especie.includes('gato');
 
-    if (isFelino) return { label: 'Gato: 0,30cm', limite: 0.30 };
-    if (porte.includes('Cão M')) return { label: 'Cão M: 0,40cm', limite: 0.40 };
-    if (porte.includes('Cão G') || porte.includes('Gigante')) return { label: 'Cão G: 0,50cm', limite: 0.50 };
+    if (isFelino) {
+      return { label: 'Gato: 0,30cm', limite: 0.30 };
+    }
+    
+    if (porte.includes('m') || porte.includes('médio') || porte.includes('medio')) {
+      return { label: 'Cão M: 0,40cm', limite: 0.40 };
+    }
+    
+    if (porte.includes('g') || porte.includes('grande') || porte.includes('gigante')) {
+      return { label: 'Cão G: 0,50cm', limite: 0.50 };
+    }
+
     return { label: 'Cão P: 0,30cm', limite: 0.30 };
   },
 
