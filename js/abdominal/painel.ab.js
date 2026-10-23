@@ -1,19 +1,34 @@
 // js/abdominal/painel.ab.js
 const ModuloPainelPaciente = {
   renderizarFicha: function(paciente, idAnimal, tutor, especie, raca, sexo, textoStatusRepro, idadeAnos, idadeMeses, porte, requisitante, clinica) {
-    // Tratamento de segurança para evitar valores 'undefined' na interface
-    const safePaciente = paciente || EstadoApp.textosEditadosManualmente['p_paciente'] || '';
-    const safeId = idAnimal || EstadoApp.textosEditadosManualmente['p_id'] || '';
-    const safeTutor = tutor || EstadoApp.textosEditadosManualmente['p_tutor'] || '';
-    const safeRaca = raca ? `${especie || ''} - ${raca}` : (especie || '');
-    const safeRacaFinal = EstadoApp.textosEditadosManualmente['p_raca'] || safeRaca;
-    const safeSexo = sexo ? `${sexo} (${textoStatusRepro || ''})` : (sexo || '');
-    const safeSexoFinal = EstadoApp.textosEditadosManualmente['p_sexo'] || safeSexo;
-    const safeIdadePorte = (idadeAnos !== undefined && porte) ? `${idadeAnos}a ${idadeMeses || 0}m / ${porte}` : (porte || '');
-    const safeIdadeFinal = EstadoApp.textosEditadosManualmente['p_idade'] || safeIdadePorte;
-    const safeReq = requisitante || EstadoApp.textosEditadosManualmente['p_req'] || '';
-    const safeClinica = clinica || EstadoApp.textosEditadosManualmente['p_clinica'] || '';
-    const safeData = EstadoApp.textosEditadosManualmente['hdr_data'] || new Date().toLocaleString('pt-BR');
+    // Valores em branco por padrão, permitindo edição manual ou preenchimento dinâmico
+    const safePaciente = EstadoApp.textosEditadosManualmente['p_paciente'] || paciente || '';
+    const safeId = EstadoApp.textosEditadosManualmente['p_id'] || idAnimal || '';
+    const safeTutor = EstadoApp.textosEditadosManualmente['p_tutor'] || tutor || '';
+    
+    let racaBase = '';
+    if (especie || raca) {
+      racaBase = `${especie || ''} ${raca ? '- ' + raca : ''}`.trim();
+    }
+    const safeRacaFinal = EstadoApp.textosEditadosManualmente['p_raca'] || racaBase;
+
+    let sexoBase = '';
+    if (sexo) {
+      sexoBase = `${sexo}${textoStatusRepro ? ' (' + textoStatusRepro + ')' : ''}`;
+    }
+    const safeSexoFinal = EstadoApp.textosEditadosManualmente['p_sexo'] || sexoBase;
+
+    let idadePorteBase = '';
+    if (idadeAnos !== undefined && porte) {
+      idadePorteBase = `${idadeAnos}a ${idadeMeses || 0}m / ${porte}`;
+    } else if (porte) {
+      idadePorteBase = porte;
+    }
+    const safeIdadeFinal = EstadoApp.textosEditadosManualmente['p_idade'] || idadePorteBase;
+
+    const safeReq = EstadoApp.textosEditadosManualmente['p_req'] || requisitante || '';
+    const safeClinica = EstadoApp.textosEditadosManualmente['p_clinica'] || clinica || '';
+    const safeData = EstadoApp.textosEditadosManualmente['hdr_data'] || '';
 
     return `
       <div>
@@ -24,7 +39,7 @@ const ModuloPainelPaciente = {
           </div>
           <div class="text-right">
             <h2 class="text-base font-bold">Laudo Ultrassonográfico</h2>
-            <div class="text-xs text-slate-500 font-medium"><b>Data:</b> <span contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('hdr_data', this)">${safeData}</span></div>
+            <div class="text-xs text-slate-500 font-medium"><b>Data:</b> <span contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('hdr_data', this)" placeholder="Selecione/Digite a data">${safeData}</span></div>
           </div>
         </div>
         <div class="patient-card-clean">
