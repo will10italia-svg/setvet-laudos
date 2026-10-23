@@ -374,19 +374,19 @@
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Paciente</label>
-              <input type="text" id="p-paciente" value="" placeholder="Nome do paciente" oninput="MotorLaudo.atualizarPaginasLaudo()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-vet-600">
+              <input type="text" id="p-paciente" value="" oninput="MotorLaudo.atualizarPaginasLaudo()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-vet-600">
             </div>
             <div>
               <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">ID / Prontuário</label>
-              <input type="text" id="p-idAnimal" value="" placeholder="Ex: 001" oninput="MotorLaudo.atualizarPaginasLaudo()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs font-mono focus:outline-none focus:border-vet-600">
+              <input type="text" id="p-idAnimal" value="" oninput="MotorLaudo.atualizarPaginasLaudo()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs font-mono focus:outline-none focus:border-vet-600">
             </div>
           </div>
 
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Espécie</label>
-              <select id="p-especie" onchange="AppInterface.handleEspecieChange()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-vet-600">
-                <option value="" disabled selected>Selecione a espécie</option>
+              <select id="p-especie" onchange="AppInterface.handleEspecieChange(); MotorLaudo.atualizarPaginasLaudo()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-vet-600">
+                <option value="">Selecione</option>
                 <option value="Canino">Canino</option>
                 <option value="Felino">Felino</option>
               </select>
@@ -395,7 +395,7 @@
               <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Raça</label>
               <div class="flex gap-1">
                 <select id="p-raca" onchange="MotorLaudo.atualizarPaginasLaudo()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-vet-600">
-                  <option value="" disabled selected>Selecione a raça</option>
+                  <option value="">Selecione</option>
                   <optgroup label="Caninos">
                     <option value="SRD (Canino)">SRD</option>
                     <option value="Shih Tzu">Shih Tzu</option>
@@ -419,7 +419,7 @@
             <div>
               <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Sexo</label>
               <select id="p-sexo" onchange="AppInterface.handleSexoChange()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-vet-600">
-                <option value="" disabled selected>Selecione</option>
+                <option value="">Selecione</option>
                 <option value="Macho">Macho</option>
                 <option value="Fêmea">Fêmea</option>
               </select>
@@ -427,8 +427,8 @@
             <div>
               <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Idade</label>
               <div class="flex items-center gap-1 text-xs">
-                <input type="text" id="p-idadeAnos" value="" placeholder="0" oninput="MotorLaudo.atualizarPaginasLaudo()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg p-1.5 text-center"> a
-                <input type="text" id="p-idadeMeses" value="" placeholder="0" oninput="MotorLaudo.atualizarPaginasLaudo()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg p-1.5 text-center"> m
+                <input type="text" id="p-idadeAnos" value="" oninput="MotorLaudo.atualizarPaginasLaudo()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg p-1.5 text-center"> a
+                <input type="text" id="p-idadeMeses" value="" oninput="MotorLaudo.atualizarPaginasLaudo()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg p-1.5 text-center"> m
               </div>
             </div>
           </div>
@@ -437,7 +437,7 @@
             <div>
               <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Porte</label>
               <select id="p-porte" onchange="MotorLaudo.atualizarPaginasLaudo()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-vet-600">
-                <option value="" disabled selected>Selecione o porte</option>
+                <option value="">Selecione</option>
                 <option value="Cão P">Cão P</option>
                 <option value="Cão M">Cão M</option>
                 <option value="Cão G">Cão G</option>
@@ -447,7 +447,7 @@
             <div>
               <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Reprodutivo</label>
               <select id="p-statusReprodutivo" onchange="MotorLaudo.atualizarPaginasLaudo()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-vet-600">
-                <option value="" disabled selected>Selecione</option>
+                <option value="">Selecione</option>
                 <option value="Castrado">Castrado</option>
                 <option value="Inteiro">Não Castrado</option>
               </select>
@@ -456,13 +456,13 @@
 
           <div>
             <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Tutor (Responsável)</label>
-            <input type="text" id="p-responsavel" value="" placeholder="Nome do tutor" oninput="MotorLaudo.atualizarPaginasLaudo()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-vet-600">
+            <input type="text" id="p-responsavel" value="" oninput="MotorLaudo.atualizarPaginasLaudo()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-vet-600">
           </div>
 
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Requisitante</label>
-              <input type="text" id="p-requisitante" value="" placeholder="Nome do veterinário" oninput="MotorLaudo.atualizarPaginasLaudo()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-vet-600">
+              <input type="text" id="p-requisitante" value="" oninput="MotorLaudo.atualizarPaginasLaudo()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-vet-600">
             </div>
             <div>
               <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Data / Hora</label>
@@ -472,7 +472,7 @@
 
           <div>
             <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Clínica Parceira</label>
-            <input type="text" id="p-clinica" value="" placeholder="Nome da clínica" oninput="MotorLaudo.atualizarPaginasLaudo()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-vet-600">
+            <input type="text" id="p-clinica" value="" oninput="MotorLaudo.atualizarPaginasLaudo()" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-vet-600">
           </div>
         </div>
 
