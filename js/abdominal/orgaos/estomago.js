@@ -238,13 +238,8 @@ window.CONFIGURACAO_ORGAOS.estomago = {
       return `Nota-se presença de estrutura formadora de sombreamento acústico posterior entremeada ao conteúdo gástrico, medindo cerca de ${c.ceMedida}cm de comprimento (Corpo estranho gástrico? Alimento não digerido? – A esclarecer, sugere-se acompanhamento sonográfico à critério do clínico responsável).`;
     }
 
-    // Padrão Normal com Referência
-    const ref = this.obterLimiteReferencia();
-    const valMedida = parseFloat((c.medida || '0').replace(',', '.')) || 0;
-    const isAlerta = valMedida > ref.limite;
-    const estiloRef = isAlerta ? 'style="color: #E5252A; font-weight: 700;"' : 'style="color: #64748b;"';
-
+    // Padrão Normal sem Referência
     const padraoStr = c.padrao && c.padrao.trim() !== '' ? `, ${c.padrao}` : '';
-    return `${prefixoDilatado}${c.conteudo}${padraoStr}, ${c.paredes}, ecogenicidade das camadas mantida e espessura ${c.ecogenicidadeSelect}, mensurando: ${c.medida} cm de espessura, em região de corpo gástrico <span ${estiloRef}>(Ref: ${ref.label})</span>.`;
+    return `${prefixoDilatado}${c.conteudo}${padraoStr}, ${c.paredes}, ecogenicidade das camadas mantida e espessura ${c.ecogenicidadeSelect}, mensurando: ${c.medida} cm de espessura, em região de corpo gástrico.`;
   }
 };
