@@ -1,6 +1,6 @@
 /**
  * Setvet - Sistema Diagnóstico & Confecção de Laudo
- * Arquivo: script.js (Código Principal Completo e Atualizado - PDF Blindado)
+ * Arquivo: script.js (Código Principal Completo e Atualizado - Neutro)
  */
 
 function initIcons() { 
@@ -56,7 +56,7 @@ const PainelConfigurador = {
     const select = document.getElementById('seletor-orgao-ativo');
     if (!select) return;
 
-    const sexoAtual = document.getElementById('p-sexo')?.value || 'Macho';
+    const sexoAtual = document.getElementById('p-sexo')?.value || '';
 
     const orgaosCompativeis = Object.entries(CONFIGURACAO_ORGAOS).filter(([chave, orgao]) => {
       const idOrgao = orgao.id || chave;
@@ -342,7 +342,7 @@ const AppInterface = {
   },
 
   handleSexoChange: function() {
-    const sexo = document.getElementById('p-sexo')?.value || 'Macho';
+    const sexo = document.getElementById('p-sexo')?.value || '';
     const statusRepro = document.getElementById('p-statusReprodutivo');
     if (statusRepro) {
       if (sexo === 'Fêmea') { statusRepro.options[0].text = 'Castrada'; statusRepro.options[1].text = 'Não Castrada'; }
@@ -379,25 +379,29 @@ const MotorLaudo = {
     container.innerHTML = '';
 
     const val = id => document.getElementById(id)?.value || '';
-    const paciente = val('p-paciente') || 'Não informado';
-    const idAnimal = val('p-idAnimal') || '---';
-    const especie = val('p-especie') || 'Canino';
-    const raca = val('p-raca') || 'SRD (Canino)';
-    const sexo = val('p-sexo') || 'Macho';
+    const paciente = val('p-paciente');
+    const idAnimal = val('p-idAnimal');
+    const especie = val('p-especie');
+    const raca = val('p-raca');
+    const sexo = val('p-sexo');
     const statusReproVal = val('p-statusReprodutivo');
-    const tutor = val('p-responsavel') || 'Não informado';
-    const clinica = val('p-clinica') || 'Não informada';
-    const porte = val('p-porte') || 'Cão P';
+    const tutor = val('p-responsavel');
+    const clinica = val('p-clinica');
+    const porte = val('p-porte');
 
-    let textoStatusRepro = statusReproVal === 'Castrado' ? (sexo === 'Fêmea' ? 'Castrada' : 'Castrado') : (sexo === 'Fêmea' ? 'Não Castrada' : 'Não Castrado');
+    let textoStatusRepro = '';
+    if (statusReproVal) {
+      textoStatusRepro = statusReproVal === 'Castrado' ? (sexo === 'Fêmea' ? 'Castrada' : 'Castrado') : (sexo === 'Fêmea' ? 'Não Castrada' : 'Não Castrado');
+    }
+
     const sanitize = s => (s||"").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9-]/g, "_").trim();
-    const nomeArquivoPdf = `Laudo_${sanitize(paciente)}_${sanitize(tutor)}.pdf`;
+    const nomeArquivoPdf = paciente ? `Laudo_${sanitize(paciente)}_${sanitize(tutor)}.pdf` : 'Laudo.pdf';
     const labelElem = document.getElementById('label-filename');
     if (labelElem) labelElem.innerText = nomeArquivoPdf;
 
     let blocosHTML = [];
     if (typeof ModuloPainelPaciente !== 'undefined' && ModuloPainelPaciente.renderizarFicha) {
-      blocosHTML.push(ModuloPainelPaciente.renderizarFicha(paciente, idAnimal, tutor, especie, raca, sexo, textoStatusRepro, val('p-idadeAnos'), val('p-idadeMeses'), porte, val('p-requisitante') || 'Não informado', clinica));
+      blocosHTML.push(ModuloPainelPaciente.renderizarFicha(paciente, idAnimal, tutor, especie, raca, sexo, textoStatusRepro, val('p-idadeAnos'), val('p-idadeMeses'), porte, val('p-requisitante'), clinica));
     }
 
     blocosHTML.push(`<div class="a4-section-title">ACHADOS ULTRASSONOGRÁFICOS</div>`);
@@ -417,39 +421,39 @@ const MotorLaudo = {
           const med = parseFloat((orgao.campos.medida || '0').toString().replace(',', '.')) || 0;
           const lim = porte === 'Felino' ? 0.25 : (porte === 'Cão G' ? 0.40 : 0.30);
           const alertClass = med > lim ? 'is-alert alerta-vermelho' : '';
-          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_estomago', this)">Ref: (${porte}: ${lim.toFixed(2).replace('.', ',')}cm)</span>`;
+          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_estomago', this)">Ref: (${porte || 'Cão P'}: ${lim.toFixed(2).replace('.', ',')}cm)</span>`;
         } else if (idOrgao === 'rins') {
           const valE = parseFloat((orgao.campos.rimeMedida || orgao.campos.medidaEsq || '0').toString().replace(',', '.')) || 0;
           const valD = parseFloat((orgao.campos.rimdMedida || orgao.campos.medidaDir || '0').toString().replace(',', '.')) || 0;
           const maxLim = porte === 'Felino' ? 4.3 : (porte === 'Cão G' ? 7.0 : (porte === 'Cão M' ? 5.5 : 4.0));
           const alertClass = (valE > maxLim || valD > maxLim) ? 'is-alert alerta-vermelho' : '';
-          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_rins', this)">Ref Rins: (${porte} até ${maxLim.toFixed(1).replace('.', ',')}cm)</span>`;
+          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_rins', this)">Ref Rins: (${porte || 'Cão P'} até ${maxLim.toFixed(1).replace('.', ',')}cm)</span>`;
         } else if (idOrgao === 'vesicula_urinaria') {
           const med = parseFloat((orgao.campos.medidaParedes || orgao.campos.medida || '0').toString().replace(',', '.')) || 0;
-          const lim = porte === 'Felino' ? 0.20 : 0.30;
+          const lim = especie === 'Felino' ? 0.20 : 0.30;
           const alertClass = med > lim ? 'is-alert alerta-vermelho' : '';
-          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_vesicula_urinaria', this)">Ref: (${especie}: ${lim.toFixed(2).replace('.', ',')}cm)</span>`;
+          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_vesicula_urinaria', this)">Ref: (${especie || 'Canino'}: ${lim.toFixed(2).replace('.', ',')}cm)</span>`;
         } else if (idOrgao === 'pancreas') {
           const med = parseFloat((orgao.campos.medida || '0').toString().replace(',', '.')) || 0;
-          const lim = porte === 'Felino' ? 0.8 : 1.0;
+          const lim = especie === 'Felino' ? 0.8 : 1.0;
           const alertClass = med > lim ? 'is-alert alerta-vermelho' : '';
-          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_pancreas', this)">Ref Pâncreas: (${especie}: ${lim.toFixed(1).replace('.', ',')}cm)</span>`;
+          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_pancreas', this)">Ref Pâncreas: (${especie || 'Canino'}: ${lim.toFixed(1).replace('.', ',')}cm)</span>`;
         } else if (idOrgao === 'adrenais') {
           const valE = parseFloat((orgao.campos.aeCaudal || orgao.campos.medidaEsq || '0').toString().replace(',', '.')) || 0;
           const valD = parseFloat((orgao.campos.adCaudal || orgao.campos.medidaDir || '0').toString().replace(',', '.')) || 0;
           const lim = porte === 'Felino' ? 0.45 : 0.58;
           const alertClass = (valE > lim || valD > lim) ? 'is-alert alerta-vermelho' : '';
-          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_adrenais', this)">Ref Polo Caudal: (${porte}: ${lim.toFixed(2).replace('.', ',')}cm)</span>`;
+          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_adrenais', this)">Ref Polo Caudal: (${porte || 'Cão P'}: ${lim.toFixed(2).replace('.', ',')}cm)</span>`;
         } else if (idOrgao === 'ovarios') {
           const valE = parseFloat((orgao.campos.oeMedida || orgao.campos.medEsq || orgao.campos.medidaEsq || '0').toString().replace(',', '.')) || 0;
           const valD = parseFloat((orgao.campos.odMedida || orgao.campos.medDir || orgao.campos.medidaDir || '0').toString().replace(',', '.')) || 0;
           const alertClass = (valE > 2.0 || valD > 2.0) ? 'is-alert alerta-vermelho' : '';
-          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_ovarios', this)">Ref Ovários: (${especie}: 2,0cm)</span>`;
+          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_ovarios', this)">Ref Ovários: (${especie || 'Canino'}: 2,0cm)</span>`;
         } else if (idOrgao === 'utero') {
           const valE = parseFloat((orgao.campos.medidaEsq || orgao.campos.medEsq || orgao.campos.oeMedida || '0').toString().replace(',', '.')) || 0;
           const valD = parseFloat((orgao.campos.medidaDir || orgao.campos.medDir || orgao.campos.odMedida || '0').toString().replace(',', '.')) || 0;
           const alertClass = (valE > 0.80 || valD > 0.80) ? 'is-alert alerta-vermelho' : '';
-          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_utero', this)">Ref Útero: (${porte}: 0,50cm - 0,80cm)</span>`;
+          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_utero', this)">Ref Útero: (${porte || 'Cão P'}: 0,50cm - 0,80cm)</span>`;
         } else if (idOrgao === 'prostata') {
           const val1 = parseFloat((orgao.campos.medida1 || orgao.campos.medida || '0').toString().replace(',', '.')) || 0;
           const alertClass = val1 > 2.5 ? 'is-alert alerta-vermelho' : '';
@@ -559,8 +563,8 @@ async function salvarLaudoAtualNaGaleria() {
   const val = id => document.getElementById(id)?.value || '';
   const paciente = val('p-paciente') || 'Paciente';
   const prontuario = val('p-idAnimal') || '---';
-  const especie = val('p-especie') || 'Canino';
-  const raca = val('p-raca') || 'SRD';
+  const especie = val('p-especie') || '';
+  const raca = val('p-raca') || '';
   const tutor = val('p-responsavel') || '';
   const clinica = val('p-clinica') || '';
   const paginasA4 = document.querySelectorAll('.page-a4');
@@ -612,13 +616,11 @@ async function sharePdf() {
   const labelFile = document.getElementById('label-filename');
   const filename = labelFile ? labelFile.innerText.trim() : 'Laudo_UltrasVet.pdf';
 
-  // 1. Remove temporariamente o modo escuro da tela principal
   const estavaNoModoEscuro = document.documentElement.classList.contains('dark');
   if (estavaNoModoEscuro) {
     document.documentElement.classList.remove('dark');
   }
 
-  // 2. Clona o contêiner e aplica regras estritas de modo claro e largura A4 fixa (794px)
   const wrapperClone = containerOriginal.cloneNode(true);
   
   const containerTemp = document.createElement('div');
@@ -628,7 +630,7 @@ async function sharePdf() {
   containerTemp.style.width = '794px';
   containerTemp.style.backgroundColor = '#ffffff';
   containerTemp.style.color = '#1e293b';
-  containerTemp.style.colorScheme = 'light'; // Trava o motor do Chrome no modo claro
+  containerTemp.style.colorScheme = 'light';
   containerTemp.style.zIndex = '999999';
 
   wrapperClone.style.transform = 'none';
@@ -640,7 +642,6 @@ async function sharePdf() {
   wrapperClone.style.flexDirection = 'column';
   wrapperClone.style.alignItems = 'center';
 
-  // Formata rigorosamente as páginas internas
   const paginas = wrapperClone.querySelectorAll('.page-a4');
   paginas.forEach(p => {
     p.classList.remove('dark');
@@ -657,7 +658,6 @@ async function sharePdf() {
     p.style.colorScheme = 'light';
   });
 
-  // Garante a cor oficial Setvet nos títulos e remove botões de controle
   wrapperClone.querySelectorAll('.a4-section-title, .a4-organ-name').forEach(el => {
     el.style.color = '#0F5A47';
   });
@@ -676,7 +676,7 @@ async function sharePdf() {
       allowTaint: true,
       logging: false,
       backgroundColor: '#ffffff',
-      windowWidth: 794 // Trava a rasterização exatamente na largura padrão A4
+      windowWidth: 794
     },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true },
     pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
@@ -695,7 +695,6 @@ async function sharePdf() {
     if (containerTemp.parentNode) {
       document.body.removeChild(containerTemp);
     }
-    // Restaura o modo escuro original na tela do usuário
     if (estavaNoModoEscuro) {
       document.documentElement.classList.add('dark');
     }
