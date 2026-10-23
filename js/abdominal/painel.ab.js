@@ -1,41 +1,39 @@
 // js/abdominal/painel.ab.js
 const ModuloPainelPaciente = {
   renderizarFicha: function(paciente, idAnimal, tutor, especie, raca, sexo, textoStatusRepro, idadeAnos, idadeMeses, porte, requisitante, clinica) {
-    // Se o usuário digitou/editou manualmente, prioriza a edição manual. 
-    // Caso contrário, usa o valor vindo do formulário (se houver), senão exibe em branco ('').
-    const safePaciente = EstadoApp.textosEditadosManualmente['p_paciente'] !== undefined ? EstadoApp.textosEditadosManualmente['p_paciente'] : (paciente || '');
-    const safeId = EstadoApp.textosEditadosManualmente['p_id'] !== undefined ? EstadoApp.textosEditadosManualmente['p_id'] : (idAnimal || '');
-    const safeTutor = EstadoApp.textosEditadosManualmente['p_tutor'] !== undefined ? EstadoApp.textosEditadosManualmente['p_tutor'] : (tutor || '');
     
+    // 1. Monta os valores base vindos dos inputs do painel esquerdo
     let racaBase = '';
     if (especie || raca) {
       racaBase = `${especie || ''} ${raca ? '- ' + raca : ''}`.trim();
     }
-    const safeRacaFinal = EstadoApp.textosEditadosManualmente['p_raca'] !== undefined ? EstadoApp.textosEditadosManualmente['p_raca'] : racaBase;
 
     let sexoBase = '';
     if (sexo) {
       sexoBase = `${sexo}${textoStatusRepro ? ' (' + textoStatusRepro + ')' : ''}`;
     }
-    const safeSexoFinal = EstadoApp.textosEditadosManualmente['p_sexo'] !== undefined ? EstadoApp.textosEditadosManualmente['p_sexo'] : sexoBase;
 
     let idadePorteBase = '';
-    if ((idadeAnos !== undefined && idadeAnos !== '') || (idadeMeses !== undefined && idadeMeses !== '') || porte) {
-      const anosStr = idadeAnos ? `${idadeAnos}a ` : '';
-      const mesesStr = idadeMeses !== undefined && idadeMeses !== '' ? `${idadeMeses}m` : '0m';
-      const parteIdade = (anosStr || mesesStr) ? `${anosStr}${mesesStr}` : '';
-      
-      if (parteIdade && porte) {
-        idadePorteBase = `${parteIdade} / ${porte}`;
-      } else {
-        idadePorteBase = parteIdade || porte || '';
-      }
+    const anosStr = idadeAnos ? `${idadeAnos}a ` : '';
+    const mesesStr = (idadeMeses !== undefined && idadeMeses !== '') ? `${idadeMeses}m` : '';
+    const parteIdade = `${anosStr}${mesesStr}`.trim();
+    
+    if (parteIdade && porte) {
+      idadePorteBase = `${parteIdade} / ${porte}`;
+    } else {
+      idadePorteBase = parteIdade || porte || '';
     }
-    const safeIdadeFinal = EstadoApp.textosEditadosManualmente['p_idade'] !== undefined ? EstadoApp.textosEditadosManualmente['p_idade'] : idadePorteBase;
 
-    const safeReq = EstadoApp.textosEditadosManualmente['p_req'] !== undefined ? EstadoApp.textosEditadosManualmente['p_req'] : (requisitante || '');
-    const safeClinica = EstadoApp.textosEditadosManualmente['p_clinica'] !== undefined ? EstadoApp.textosEditadosManualmente['p_clinica'] : (clinica || '');
-    const safeData = EstadoApp.textosEditadosManualmente['hdr_data'] !== undefined ? EstadoApp.textosEditadosManualmente['hdr_data'] : '';
+    // 2. Define prioridade: se o usuário digitou no painel esquerdo, usa ele. Se o campo esquerdo estiver vazio, permite edição manual à direita.
+    const safePaciente = paciente !== '' ? paciente : (EstadoApp.textosEditadosManualmente['p_paciente'] || '');
+    const safeId = idAnimal !== '' ? idAnimal : (EstadoApp.textosEditadosManualmente['p_id'] || '');
+    const safeTutor = tutor !== '' ? tutor : (EstadoApp.textosEditadosManualmente['p_tutor'] || '');
+    const safeRacaFinal = racaBase !== '' ? racaBase : (EstadoApp.textosEditadosManualmente['p_raca'] || '');
+    const safeSexoFinal = sexoBase !== '' ? sexoBase : (EstadoApp.textosEditadosManualmente['p_sexo'] || '');
+    const safeIdadeFinal = idadePorteBase !== '' ? idadePorteBase : (EstadoApp.textosEditadosManualmente['p_idade'] || '');
+    const safeReq = requisitante !== '' ? requisitante : (EstadoApp.textosEditadosManualmente['p_req'] || '');
+    const safeClinica = clinica !== '' ? clinica : (EstadoApp.textosEditadosManualmente['p_clinica'] || '');
+    const safeData = EstadoApp.textosEditadosManualmente['hdr_data'] || '';
 
     return `
       <div>
