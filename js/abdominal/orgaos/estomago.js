@@ -1,4 +1,4 @@
-// js/orgaos/estomago.js
+// js/abdominal/orgaos/estomago.js
 
 if (!window.CONFIGURACAO_ORGAOS) {
   window.CONFIGURACAO_ORGAOS = {};
@@ -64,7 +64,6 @@ window.CONFIGURACAO_ORGAOS.estomago = {
   },
 
   obterLimiteReferencia: function() {
-    // Varre todos os selects ou inputs na página que possam conter a espécie ou o porte
     const selects = document.querySelectorAll('select, input');
     let especieStr = '';
     let porteStr = '';
@@ -81,7 +80,6 @@ window.CONFIGURACAO_ORGAOS.estomago = {
       }
     });
 
-    // Fallback caso não encontre pelos IDs parciais
     if (!especieStr) {
       especieStr = (document.getElementById('p-especie')?.value || document.getElementById('especie')?.value || '').toLowerCase();
     }
