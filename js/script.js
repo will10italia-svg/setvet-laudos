@@ -418,8 +418,15 @@ const MotorLaudo = {
       const jaPossuiRef = textoFinal && textoFinal.includes('ref-text');
       if (!jaPossuiRef) {
         if (idOrgao === 'estomago') {
-          const med = parseFloat((orgao.campos.medida || '0').toString().replace(',', '.')) || 0;
-          const lim = porte === 'Felino' ? 0.25 : (porte === 'Cão G' ? 0.40 : 0.30);
+          const valRaw = orgao.campos.medida || orgao.campos.espessura || orgao.campos.parede || '0';
+          const med = parseFloat(valRaw.toString().replace(',', '.')) || 0;
+          
+          let lim = 0.30;
+          if (porte === 'Cão M') lim = 0.40;
+          else if (porte === 'Cão G') lim = 0.50;
+          else if (porte === 'Felino') lim = 0.30;
+          else if (porte === 'Cão P') lim = 0.30;
+
           const alertClass = (med > 0 && med > lim) ? 'is-alert alerta-vermelho' : '';
           const medFormatada = med > 0 ? med.toFixed(2).replace('.', ',') : '0,00';
           refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_estomago', this)">Ref: (${porte || 'Cão P'}: até ${lim.toFixed(2).replace('.', ',')}cm - Medido: ${medFormatada}cm)</span>`;
