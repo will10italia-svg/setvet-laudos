@@ -64,23 +64,40 @@ window.CONFIGURACAO_ORGAOS.estomago = {
   },
 
   obterLimiteReferencia: function() {
-    const selectEspecie = document.getElementById('p-especie') || document.getElementById('especie');
-    const selectPorte = document.getElementById('p-porte') || document.getElementById('porte');
+    // Varre todos os selects ou inputs na página que possam conter a espécie ou o porte
+    const selects = document.querySelectorAll('select, input');
+    let especieStr = '';
+    let porteStr = '';
 
-    const especie = (selectEspecie?.value || 'Canino').toLowerCase();
-    const porte = (selectPorte?.value || 'Cão P').toLowerCase();
+    selects.forEach(el => {
+      const id = (el.id || '').toLowerCase();
+      const val = (el.value || '').toLowerCase();
+      
+      if (id.includes('especie') || id.includes('espc')) {
+        especieStr = val;
+      }
+      if (id.includes('porte') || id.includes('prt')) {
+        porteStr = val;
+      }
+    });
 
-    const isFelino = especie.includes('felino') || especie.includes('gato');
+    // Fallback caso não encontre pelos IDs parciais
+    if (!especieStr) {
+      especieStr = (document.getElementById('p-especie')?.value || document.getElementById('especie')?.value || '').toLowerCase();
+    }
+    if (!porteStr) {
+      porteStr = (document.getElementById('p-porte')?.value || document.getElementById('porte')?.value || '').toLowerCase();
+    }
 
-    if (isFelino) {
+    const textoCompleta = (especieStr + ' ' + porteStr).toLowerCase();
+
+    if (textoCompleta.includes('felino') || textoCompleta.includes('gato')) {
       return { label: 'Gato: 0,30cm', limite: 0.30 };
     }
-    
-    if (porte.includes('m') || porte.includes('médio') || porte.includes('medio')) {
+    if (textoCompleta.includes('cão m') || textoCompleta.includes('médio') || textoCompleta.includes('medio') || porteStr === 'm') {
       return { label: 'Cão M: 0,40cm', limite: 0.40 };
     }
-    
-    if (porte.includes('g') || porte.includes('grande') || porte.includes('gigante')) {
+    if (textoCompleta.includes('cão g') || textoCompleta.includes('grande') || textoCompleta.includes('gigante') || porteStr === 'g') {
       return { label: 'Cão G: 0,50cm', limite: 0.50 };
     }
 
