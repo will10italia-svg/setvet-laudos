@@ -68,7 +68,7 @@ window.CONFIGURACAO_ORGAOS.estomago = {
     const porte = document.getElementById('p-porte')?.value || 'Cão P';
     const isFelino = especie.includes('felino') || especie.includes('gato');
 
-    if (isFelino) return { label: 'Gato: 0,25cm', limite: 0.25 };
+    if (isFelino) return { label: 'Gato: 0,30cm', limite: 0.30 };
     if (porte.includes('Cão M')) return { label: 'Cão M: 0,40cm', limite: 0.40 };
     if (porte.includes('Cão G') || porte.includes('Gigante')) return { label: 'Cão G: 0,50cm', limite: 0.50 };
     return { label: 'Cão P: 0,30cm', limite: 0.30 };
@@ -238,7 +238,7 @@ window.CONFIGURACAO_ORGAOS.estomago = {
       return `Nota-se presença de estrutura formadora de sombreamento acústico posterior entremeada ao conteúdo gástrico, medindo cerca de ${c.ceMedida}cm de comprimento (Corpo estranho gástrico? Alimento não digerido? – A esclarecer, sugere-se acompanhamento sonográfico à critério do clínico responsável).`;
     }
 
-    // Padrão Normal sem Referência
+    // Padrão Normal sem Referência no texto gerado
     const padraoStr = c.padrao && c.padrao.trim() !== '' ? `, ${c.padrao}` : '';
     return `${prefixoDilatado}${c.conteudo}${padraoStr}, ${c.paredes}, ecogenicidade das camadas mantida e espessura ${c.ecogenicidadeSelect}, mensurando: ${c.medida} cm de espessura, em região de corpo gástrico.`;
   }
