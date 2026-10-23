@@ -1,6 +1,6 @@
 /**
  * Setvet - Sistema Diagnóstico & Confecção de Laudo
- * Arquivo: script.js (Código Principal Completo e Atualizado - Neutro)
+ * Arquivo: script.js (Código Principal Completo, Atualizado e Corrigido)
  */
 
 function initIcons() { 
@@ -420,8 +420,9 @@ const MotorLaudo = {
         if (idOrgao === 'estomago') {
           const med = parseFloat((orgao.campos.medida || '0').toString().replace(',', '.')) || 0;
           const lim = porte === 'Felino' ? 0.25 : (porte === 'Cão G' ? 0.40 : 0.30);
-          const alertClass = med > lim ? 'is-alert alerta-vermelho' : '';
-          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_estomago', this)">Ref: (${porte || 'Cão P'}: ${lim.toFixed(2).replace('.', ',')}cm)</span>`;
+          const alertClass = (med > 0 && med > lim) ? 'is-alert alerta-vermelho' : '';
+          const medFormatada = med > 0 ? med.toFixed(2).replace('.', ',') : '0,00';
+          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_estomago', this)">Ref: (${porte || 'Cão P'}: até ${lim.toFixed(2).replace('.', ',')}cm - Medido: ${medFormatada}cm)</span>`;
         } else if (idOrgao === 'rins') {
           const valE = parseFloat((orgao.campos.rimeMedida || orgao.campos.medidaEsq || '0').toString().replace(',', '.')) || 0;
           const valD = parseFloat((orgao.campos.rimdMedida || orgao.campos.medidaDir || '0').toString().replace(',', '.')) || 0;
