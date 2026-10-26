@@ -55,13 +55,25 @@ window.CONFIGURACAO_ORGAOS.prostata = {
 
   obterLimiteReferencia: function() {
     const elPorte = document.getElementById('p-porte');
+    const elEspecie = document.getElementById('p-especie');
     const porteVal = elPorte ? elPorte.value : 'Cão P';
+    const especieVal = elEspecie ? elEspecie.value : 'Canino';
 
-    let limiteMax = 2.5; // Cão P: 2,0 a 2,5 cm
-    if (porteVal === 'Cão M') limiteMax = 3.5; // Cão M: 3,0 a 3,5 cm
-    else if (porteVal === 'Cão G') limiteMax = 4.5; // Cão G: 4,0 a 4,5 cm
+    if (especieVal === 'Felino' || porteVal === 'Felino') {
+      return { porte: 'Felino', limite: 0, isFelino: true };
+    }
 
-    return { porte: porteVal, limite: limiteMax };
+    let limiteMin = 2.0;
+    let limiteMax = 2.5; // Cão P: 2.0 a 2.5
+    if (porteVal === 'Cão M') {
+      limiteMin = 3.0;
+      limiteMax = 3.5; // Cão M: 3.0 a 3.5
+    } else if (porteVal === 'Cão G') {
+      limiteMin = 4.0;
+      limiteMax = 4.5; // Cão G: 4.0 a 4.5
+    }
+
+    return { porte: porteVal, min: limiteMin, limite: limiteMax, isFelino: false };
   },
 
   gerarTexto: function(c) {
@@ -83,11 +95,13 @@ window.CONFIGURACAO_ORGAOS.prostata = {
 
   renderCamposCustomizados: function() {
     const ref = this.obterLimiteReferencia();
+    const refTexto = ref.isFelino ? 'Espécie felina (sem relevância rotineira)' : `${ref.porte}: ${ref.min.toFixed(1).replace('.', ',')} a ${ref.limite.toFixed(1).replace('.', ',')} cm`;
+
     let html = `<div class="space-y-3">
       <div class="p-3 bg-slate-50 dark:bg-zinc-800/60 rounded-xl border border-slate-200 dark:border-zinc-700 space-y-2">
         <div class="flex items-center justify-between border-b border-slate-200 dark:border-zinc-700 pb-1">
           <span class="text-[11px] font-bold text-emerald-700 dark:text-emerald-400">Biometria da Próstata</span>
-          <span class="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold">(Ref: ${ref.porte} até ${ref.limite.toFixed(1).replace('.', ',')}cm)</span>
+          <span class="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold">(Ref: ${refTexto})</span>
         </div>
 
         <div class="grid grid-cols-2 gap-2">
