@@ -117,54 +117,37 @@ window.CONFIGURACAO_ORGAOS.adrenais = {
   },
 
   obterLimiteReferencia: function() {
-    let especieStr = '';
-    let porteStr = '';
+    let textoCompleto = '';
 
-    // Varre todos os selects e inputs do app para capturar espécie e porte com precisão
-    const selects = document.querySelectorAll('select, input');
-    selects.forEach(el => {
+    // Tenta ler diretamente de todos os selects e inputs da página do painel esquerdo
+    const elementos = document.querySelectorAll('select, input');
+    elementos.forEach(el => {
       const id = (el.id || '').toLowerCase();
-      const name = (el.name || '').toLowerCase();
       const val = (el.value || '').toLowerCase();
-      
-      // Captura texto da opção selecionada se for um elemento select
-      let selectedText = '';
+      let textoOpcao = '';
       if (el.tagName === 'SELECT' && el.selectedIndex >= 0) {
-        selectedText = (el.options[el.selectedIndex].text || '').toLowerCase();
+        textoOpcao = (el.options[el.selectedIndex].text || '').toLowerCase();
       }
-
-      const combinedMeta = id + ' ' + name + ' ' + val + ' ' + selectedText;
-
-      if (combinedMeta.includes('especie') || combinedMeta.includes('espc') || combinedMeta.includes('animal')) {
-        especieStr += ' ' + combinedMeta;
-      }
-      if (combinedMeta.includes('porte') || combinedMeta.includes('prt') || combinedMeta === 'p' || combinedMeta === 'm' || combinedMeta === 'g') {
-        porteStr += ' ' + combinedMeta;
-      }
+      textoCompleto += ` ${id} ${val} ${textoOpcao}`;
     });
 
-    // Fallback direto aos elementos globais comuns caso existam
-    const globalEspecie = (document.getElementById('p-especie')?.value || document.getElementById('especie')?.value || '').toLowerCase();
-    const globalPorte = (document.getElementById('p-porte')?.value || document.getElementById('porte')?.value || '').toLowerCase();
-    
-    const textoCompleto = (especieStr + ' ' + porteStr + ' ' + globalEspecie + ' ' + globalPorte).toLowerCase();
+    // Identifica espécie
+    const ehGato = textoCompleta.includes('gato') || textoCompleta.includes('felino');
 
-    // Verificação de Gato / Felino
-    if (textoCompleta.includes('felino') || textoCompleta.includes('gato')) {
+    if (ehGato) {
       return { label: 'Gato: até 0,40cm', limite: 0.40 };
     }
 
-    // Verificação de Cão Grande / G
-    if (textoCompleta.includes('grande') || textoCompleta.includes('gigante') || textoCompleta.includes(' cão g') || textoCompleta.includes('cao g') || globalPorte === 'g' || porteStr.includes('g')) {
+    // Identifica porte do cão de forma abrangente
+    if (textoCompleta.includes('grande') || textoCompleta.includes('gigante') || textoCompleta.includes('porte g') || textoCompleta.includes(' 80') || textoCompleta.includes('"g"') || textoCompleta.includes('value="g"')) {
       return { label: 'Cão G: até 0,80cm', limite: 0.80 };
     }
-
-    // Verificação de Cão Médio / M
-    if (textoCompleta.includes('médio') || textoCompleta.includes('medio') || textoCompleta.includes(' cão m') || textoCompleta.includes('cao m') || globalPorte === 'm' || porteStr.includes('m')) {
+    
+    if (textoCompleta.includes('médio') || textoCompleta.includes('medio') || textoCompleta.includes('porte m') || textoCompleta.includes('"m"') || textoCompleta.includes('value="m"')) {
       return { label: 'Cão M: até 0,68cm', limite: 0.68 };
     }
 
-    // Padrão Cão Pequeno / P
+    // Padrão Cão Pequeno (P)
     return { label: 'Cão P: até 0,58cm', limite: 0.58 };
   },
 
