@@ -60,20 +60,14 @@ window.CONFIGURACAO_ORGAOS.prostata = {
     const especieVal = elEspecie ? elEspecie.value : 'Canino';
 
     if (especieVal === 'Felino' || porteVal === 'Felino') {
-      return { porte: 'Felino', limite: 0, isFelino: true };
+      return { isFelino: true };
     }
 
-    let limiteMin = 2.0;
-    let limiteMax = 2.5; // Cão P: 2.0 a 2.5
-    if (porteVal === 'Cão M') {
-      limiteMin = 3.0;
-      limiteMax = 3.5; // Cão M: 3.0 a 3.5
-    } else if (porteVal === 'Cão G') {
-      limiteMin = 4.0;
-      limiteMax = 4.5; // Cão G: 4.0 a 4.5
-    }
+    let min = 2.0, max = 2.5;
+    if (porteVal === 'Cão M') { min = 3.0; max = 3.5; }
+    else if (porteVal === 'Cão G') { min = 4.0; max = 4.5; }
 
-    return { porte: porteVal, min: limiteMin, limite: limiteMax, isFelino: false };
+    return { porte: porteVal, min, max, isFelino: false };
   },
 
   gerarTexto: function(c) {
@@ -86,6 +80,16 @@ window.CONFIGURACAO_ORGAOS.prostata = {
     if (m1 > 0) linhas.push(`• Diâmetro longitudinal: ${c.medida1} cm`);
     if (m2 > 0) linhas.push(`• Diâmetro transverso / altura: ${c.medida2} cm`);
 
+    const ref = this.obterLimiteReferencia();
+    if (ref.isFelino) {
+      linhas.push(`<span class="ref-text">Ref Próstata: (Espécie felina - sem referência rotineira)</span>`);
+    } else {
+      const maxMed = Math.max(m1, m2);
+      const alertClass = (maxMed > 0 && maxMed > ref.max) ? 'is-alert alerta-vermelho' : '';
+      const medFormatada = maxMed > 0 ? maxMed.toFixed(2).replace('.', ',') : '0,00';
+      linhas.push(`<span class="ref-text ${alertClass}">Ref Próstata: (${ref.porte}: ${ref.min.toFixed(1).replace('.', ',')} a ${ref.max.toFixed(1).replace('.', ',')}cm - Medido: ${medFormatada}cm)</span>`);
+    }
+
     if (linhas.length > 0) {
       txt += linhas.join('<br>');
     }
@@ -95,7 +99,7 @@ window.CONFIGURACAO_ORGAOS.prostata = {
 
   renderCamposCustomizados: function() {
     const ref = this.obterLimiteReferencia();
-    const refTexto = ref.isFelino ? 'Espécie felina (sem relevância rotineira)' : `${ref.porte}: ${ref.min.toFixed(1).replace('.', ',')} a ${ref.limite.toFixed(1).replace('.', ',')} cm`;
+    const refTexto = ref.isFelino ? 'Espécie felina (sem relevância)' : `${ref.porte}: ${ref.min.toFixed(1).replace('.', ',')} a ${ref.max.toFixed(1).replace('.', ',')} cm`;
 
     let html = `<div class="space-y-3">
       <div class="p-3 bg-slate-50 dark:bg-zinc-800/60 rounded-xl border border-slate-200 dark:border-zinc-700 space-y-2">
