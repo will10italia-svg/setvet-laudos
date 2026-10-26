@@ -1,6 +1,6 @@
 /**
  * Setvet - Sistema Diagnóstico & Confecção de Laudo
- * Arquivo: script.js (Código Principal Completo, Atualizado e Sincronizado com Porte Dinâmico)
+ * Arquivo: script.js (Código Principal Completo, Atualizado e Sincronizado)
  */
 
 function initIcons() { 
@@ -36,7 +36,7 @@ const EstadoApp = {
   ]
 };
 
-// Auxiliar para verificar restrição de sexo por ID de órgão
+// Auxiliar robusta para verificar restrição de sexo por ID de órgão
 function orgaoEhIncompativelComSexo(idOrgao, sexoAtual) {
   const idNormalizado = String(idOrgao).toLowerCase();
   const sexoLimpo = String(sexoAtual || '').trim();
@@ -57,11 +57,11 @@ const PainelConfigurador = {
     const select = document.getElementById('seletor-orgao-ativo');
     if (!select) return;
 
-    const sexoAtual = document.getElementById('p-sexo')?.value || '';
+    const sexoada = document.getElementById('p-sexo')?.value || '';
 
     const orgaosCompativeis = Object.entries(CONFIGURACAO_ORGAOS).filter(([chave, orgao]) => {
       const idOrgao = orgao.id || chave;
-      return !orgaoEhIncompativelComSexo(idOrgao, sexoAtual);
+      return !orgaoEhIncompativelComSexo(idOrgao, sexoada);
     });
 
     const idsValidos = orgaosCompativeis.map(([chave, o]) => o.id || chave);
@@ -339,7 +339,7 @@ const AppInterface = {
     if (!especieElem || !porte) return;
     if (especieElem.value === "Felino") porte.value = "Felino";
     else if (porte.value === "Felino") porte.value = "Cão P";
-    PainelConfigurador.renderizar();
+    PainelConfigurador.inicializarSeletor();
     MotorLaudo.atualizarPaginasLaudo();
   },
 
@@ -838,7 +838,7 @@ window.onload = async function() {
     document.documentElement.classList.add('dark');
   } else { document.documentElement.classList.remove('dark'); }
 
-  // Listeners nativos robustos para atualizar o painel e o laudo em tempo real
+  // Listeners robustos para atualizar o painel e o laudo em tempo real ao mexer nos selects do paciente
   const selectPorte = document.getElementById('p-porte');
   if (selectPorte) {
     selectPorte.addEventListener('change', () => {
