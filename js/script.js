@@ -1,6 +1,6 @@
 /**
  * Setvet - Sistema Diagnóstico & Confecção de Laudo
- * Arquivo: script.js (Código Principal Completo, Atualizado e Sincronizado)
+ * Arquivo: script.js (Código Principal Completo, Atualizado e Corrigido)
  */
 
 function initIcons() { 
@@ -37,7 +37,7 @@ const EstadoApp = {
 };
 
 function orgaoEhIncompativelComSexo(idOrgao, sexoAtual) {
-  return false; // Mantém todos os órgãos visíveis livremente
+  return false; 
 }
 
 // =========================================================
@@ -439,7 +439,7 @@ const MotorLaudo = {
           const valE = parseFloat((orgao.campos.medidaEsq || '0').toString().replace(',', '.')) || 0;
           const valD = parseFloat((orgao.campos.medidaDir || '0').toString().replace(',', '.')) || 0;
           
-          let limUtero = 0.80;
+          let limUtero = 0.80; // Padrão e Felino
           if (porte === 'Cão M') limUtero = 1.00;
           else if (porte === 'Cão G') limUtero = 1.30;
           else if (porte === 'Felino' || especie === 'Felino') limUtero = 0.80;
