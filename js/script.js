@@ -39,10 +39,11 @@ const EstadoApp = {
 // Auxiliar para verificar restrição de sexo por ID de órgão
 function orgaoEhIncompativelComSexo(idOrgao, sexoAtual) {
   const idNormalizado = String(idOrgao).toLowerCase();
+  const sexoLimpo = String(sexoAtual || '').trim();
   
-  if (sexoAtual === 'Fêmea') {
+  if (sexoLimpo === 'Fêmea') {
     if (idNormalizado.includes('testic') || idNormalizado.includes('prostat')) return true;
-  } else if (sexoAtual === 'Macho') {
+  } else if (sexoLimpo === 'Macho') {
     if (idNormalizado.includes('ovari') || idNormalizado.includes('uter')) return true;
   }
   return false;
@@ -832,16 +833,23 @@ const ControleZoom = {
 };
 
 window.onload = async function() {
-  const savedTheme = localStorage.(`ultrasvet_theme`);
+  const savedTheme = localStorage.getItem('ultrasvet_theme');
   if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
     document.documentElement.classList.add('dark');
   } else { document.documentElement.classList.remove('dark'); }
 
-  // Listener nativo para detetar alterações diretas no select de porte da interface
+  // Listeners nativos robustos para atualizar o painel e o laudo em tempo real
   const selectPorte = document.getElementById('p-porte');
   if (selectPorte) {
     selectPorte.addEventListener('change', () => {
       AppInterface.handlePorteChange();
+    });
+  }
+
+  const selectSexo = document.getElementById('p-sexo');
+  if (selectSexo) {
+    selectSexo.addEventListener('change', () => {
+      AppInterface.handleSexoChange();
     });
   }
 
