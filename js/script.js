@@ -36,17 +36,8 @@ const EstadoApp = {
   ]
 };
 
-// Auxiliar robusta para verificar restrição de sexo por ID de órgão
 function orgaoEhIncompativelComSexo(idOrgao, sexoAtual) {
-  const idNormalizado = String(idOrgao).toLowerCase();
-  const sexoLimpo = String(sexoAtual || '').trim();
-  
-  if (sexoLimpo === 'Fêmea') {
-    if (idNormalizado.includes('testic') || idNormalizado.includes('prostat')) return true;
-  } else if (sexoLimpo === 'Macho') {
-    if (idNormalizado.includes('ovari') || idNormalizado.includes('uter')) return true;
-  }
-  return false;
+  return false; // Mantém todos os órgãos visíveis livremente
 }
 
 // =========================================================
@@ -57,19 +48,7 @@ const PainelConfigurador = {
     const select = document.getElementById('seletor-orgao-ativo');
     if (!select) return;
 
-    const sexoada = document.getElementById('p-sexo')?.value || '';
-
-    const orgaosCompativeis = Object.entries(CONFIGURACAO_ORGAOS).filter(([chave, orgao]) => {
-      const idOrgao = orgao.id || chave;
-      return !orgaoEhIncompativelComSexo(idOrgao, sexoada);
-    });
-
-    const idsValidos = orgaosCompativeis.map(([chave, o]) => o.id || chave);
-    const ativoValido = idsValidos.includes(EstadoApp.orgaoConfigAtivo) ||
-                        EstadoApp.orgaosAdicionais.some(oa => oa.id === EstadoApp.orgaoConfigAtivo);
-
-    if (!ativoValido) EstadoApp.orgaoConfigAtivo = 'figado';
-
+    const orgaosCompativeis = Object.entries(CONFIGURACAO_ORGAOS);
     let optionsHTML = orgaosCompativeis.map(([chave, o]) => `
       <option value="${o.id || chave}">${o.icone || '🩺'} ${o.nome}</option>
     `).join('');
@@ -339,7 +318,7 @@ const AppInterface = {
     if (!especieElem || !porte) return;
     if (especieElem.value === "Felino") porte.value = "Felino";
     else if (porte.value === "Felino") porte.value = "Cão P";
-    PainelConfigurador.inicializarSeletor();
+    PainelConfigurador.renderizar();
     MotorLaudo.atualizarPaginasLaudo();
   },
 
@@ -355,9 +334,6 @@ const AppInterface = {
       if (sexo === 'Fêmea') { statusRepro.options[0].text = 'Castrada'; statusRepro.options[1].text = 'Não Castrada'; }
       else { statusRepro.options[0].text = 'Castrado'; statusRepro.options[1].text = 'Não Castrado'; }
     }
-    Object.keys(EstadoApp.textosEditadosManualmente).forEach(key => {
-      if (orgaoEhIncompativelComSexo(key, sexo)) delete EstadoApp.textosEditadosManualmente[key];
-    });
     PainelConfigurador.inicializarSeletor();
     MotorLaudo.atualizarPaginasLaudo();
   },
@@ -416,7 +392,6 @@ const MotorLaudo = {
     Object.entries(CONFIGURACAO_ORGAOS).forEach(([chave, orgao]) => {
       if (orgao.oculto) return;
       const idOrgao = orgao.id || chave;
-      if (orgaoEhIncompativelComSexo(idOrgao, sexo)) return;
 
       const textoCalculado = orgao.gerarTexto(orgao.campos);
       const textoFinal = EstadoApp.textosEditadosManualmente[idOrgao] || textoCalculado;
@@ -427,13 +402,10 @@ const MotorLaudo = {
         if (idOrgao === 'estomago') {
           const valRaw = orgao.campos.medida || orgao.campos.espessura || orgao.campos.parede || '0';
           const med = parseFloat(valRaw.toString().replace(',', '.')) || 0;
-          
           let lim = 0.30;
           if (porte === 'Cão M') lim = 0.40;
           else if (porte === 'Cão G') lim = 0.50;
           else if (porte === 'Felino') lim = 0.30;
-          else if (porte === 'Cão P') lim = 0.30;
-
           const alertClass = (med > 0 && med > lim) ? 'is-alert alerta-vermelho' : '';
           const medFormatada = med > 0 ? med.toFixed(2).replace('.', ',') : '0,00';
           refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_estomago', this)">Ref: (${porte || 'Cão P'}: até ${lim.toFixed(2).replace('.', ',')}cm - Medido: ${medFormatada}cm)</span>`;
@@ -456,19 +428,12 @@ const MotorLaudo = {
         } else if (idOrgao === 'adrenais') {
           const valE = parseFloat((orgao.campos.aeCaudal || '0').toString().replace(',', '.')) || 0;
           const valD = parseFloat((orgao.campos.adCaudal || '0').toString().replace(',', '.')) || 0;
-          
           let lim = 0.58;
-          if (porte === 'Felino' || especie === 'Felino') {
-            lim = 0.40;
-          } else if (porte === 'Cão M') {
-            lim = 0.68;
-          } else if (porte === 'Cão G') {
-            lim = 0.80;
-          }
-
+          if (porte === 'Felino' || especie === 'Felino') lim = 0.40;
+          else if (porte === 'Cão M') lim = 0.68;
+          else if (porte === 'Cão G') lim = 0.80;
           const alertClass = ((valE > 0 && valE > lim) || (valD > 0 && valD > lim)) ? 'is-alert alerta-vermelho' : '';
           const maxValStr = Math.max(valE, valD) > 0 ? Math.max(valE, valD).toFixed(2).replace('.', ',') : '0,00';
-          
           refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_adrenais', this)">Ref Polo Caudal: (${porte || 'Cão P'}: até ${lim.toFixed(2).replace('.', ',')}cm - Medido: ${maxValStr}cm)</span>`;
         } else if (idOrgao === 'utero') {
           const valE = parseFloat((orgao.campos.medidaEsq || '0').toString().replace(',', '.')) || 0;
@@ -477,7 +442,7 @@ const MotorLaudo = {
           let limUtero = 0.80;
           if (porte === 'Cão M') limUtero = 1.00;
           else if (porte === 'Cão G') limUtero = 1.30;
-          else if (porte === 'Felino') limUtero = 0.50;
+          else if (porte === 'Felino' || especie === 'Felino') limUtero = 0.80;
 
           const alertClass = (valE > 0 && valE > limUtero) || (valD > 0 && valD > limUtero) ? 'is-alert alerta-vermelho' : '';
           const maxValStr = Math.max(valE, valD) > 0 ? Math.max(valE, valD).toFixed(2).replace('.', ',') : '0,00';
@@ -486,11 +451,9 @@ const MotorLaudo = {
           const val1 = parseFloat((orgao.campos.medida1 || '0').toString().replace(',', '.')) || 0;
           const val2 = parseFloat((orgao.campos.medida2 || '0').toString().replace(',', '.')) || 0;
           const maxMed = Math.max(val1, val2);
-          
           let limPros = 2.5;
           if (porte === 'Cão M') limPros = 3.2;
           else if (porte === 'Cão G') limPros = 4.0;
-
           const alertClass = (maxMed > 0 && maxMed > limPros) ? 'is-alert alerta-vermelho' : '';
           const medFormatada = maxMed > 0 ? maxMed.toFixed(2).replace('.', ',') : '0,00';
           refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_prostata', this)">Ref Próstata: (${porte || 'Cão P'}: até ${limPros.toFixed(1).replace('.', ',')}cm - Medido: ${medFormatada}cm)</span>`;
@@ -838,7 +801,6 @@ window.onload = async function() {
     document.documentElement.classList.add('dark');
   } else { document.documentElement.classList.remove('dark'); }
 
-  // Listeners robustos para atualizar o painel e o laudo em tempo real ao mexer nos selects do paciente
   const selectPorte = document.getElementById('p-porte');
   if (selectPorte) {
     selectPorte.addEventListener('change', () => {
@@ -846,10 +808,10 @@ window.onload = async function() {
     });
   }
 
-  const selectSexo = document.getElementById('p-sexo');
-  if (selectSexo) {
-    selectSexo.addEventListener('change', () => {
-      AppInterface.handleSexoChange();
+  const selectEspecie = document.getElementById('p-especie');
+  if (selectEspecie) {
+    selectEspecie.addEventListener('change', () => {
+      AppInterface.handleEspecieChange();
     });
   }
 
