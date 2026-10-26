@@ -1,6 +1,6 @@
 /**
  * Setvet - Sistema Diagnóstico & Confecção de Laudo
- * Arquivo: script.js (Código Principal Completo, Atualizado e Corrigido para Adrenais, Útero e Próstata)
+ * Arquivo: script.js (Código Principal Completo, Atualizado e Sincronizado com Porte Dinâmico)
  */
 
 function initIcons() { 
@@ -338,6 +338,12 @@ const AppInterface = {
     if (!especieElem || !porte) return;
     if (especieElem.value === "Felino") porte.value = "Felino";
     else if (porte.value === "Felino") porte.value = "Cão P";
+    PainelConfigurador.renderizar();
+    MotorLaudo.atualizarPaginasLaudo();
+  },
+
+  handlePorteChange: function() {
+    PainelConfigurador.renderizar();
     MotorLaudo.atualizarPaginasLaudo();
   },
 
@@ -466,16 +472,27 @@ const MotorLaudo = {
         } else if (idOrgao === 'utero') {
           const valE = parseFloat((orgao.campos.medidaEsq || '0').toString().replace(',', '.')) || 0;
           const valD = parseFloat((orgao.campos.medidaDir || '0').toString().replace(',', '.')) || 0;
-          const alertClass = (valE > 0 && valE > 0.80) || (valD > 0 && valD > 0.80) ? 'is-alert alerta-vermelho' : '';
+          
+          let limUtero = 0.80;
+          if (porte === 'Cão M') limUtero = 1.00;
+          else if (porte === 'Cão G') limUtero = 1.30;
+          else if (porte === 'Felino') limUtero = 0.50;
+
+          const alertClass = (valE > 0 && valE > limUtero) || (valD > 0 && valD > limUtero) ? 'is-alert alerta-vermelho' : '';
           const maxValStr = Math.max(valE, valD) > 0 ? Math.max(valE, valD).toFixed(2).replace('.', ',') : '0,00';
-          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_utero', this)">Ref Útero: (${porte || 'Cão P'}: Cornos 0,50cm - 0,80cm - Medido: ${maxValStr}cm)</span>`;
+          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_utero', this)">Ref Útero: (${porte || 'Cão P'}: até ${limUtero.toFixed(2).replace('.', ',')}cm - Medido: ${maxValStr}cm)</span>`;
         } else if (idOrgao === 'prostata') {
           const val1 = parseFloat((orgao.campos.medida1 || '0').toString().replace(',', '.')) || 0;
           const val2 = parseFloat((orgao.campos.medida2 || '0').toString().replace(',', '.')) || 0;
           const maxMed = Math.max(val1, val2);
-          const alertClass = (maxMed > 0 && maxMed > 2.5) ? 'is-alert alerta-vermelho' : '';
+          
+          let limPros = 2.5;
+          if (porte === 'Cão M') limPros = 3.2;
+          else if (porte === 'Cão G') limPros = 4.0;
+
+          const alertClass = (maxMed > 0 && maxMed > limPros) ? 'is-alert alerta-vermelho' : '';
           const medFormatada = maxMed > 0 ? maxMed.toFixed(2).replace('.', ',') : '0,00';
-          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_prostata', this)">Ref Próstata: (${porte || 'Cão P'}: até 2,5cm - Medido: ${medFormatada}cm)</span>`;
+          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_prostata', this)">Ref Próstata: (${porte || 'Cão P'}: até ${limPros.toFixed(1).replace('.', ',')}cm - Medido: ${medFormatada}cm)</span>`;
         } else if (idOrgao === 'ovarios') {
           const valE = parseFloat((orgao.campos.medidaEsq || orgao.campos.oeMedida || '0').toString().replace(',', '.')) || 0;
           const valD = parseFloat((orgao.campos.medidaDir || orgao.campos.odMedida || '0').toString().replace(',', '.')) || 0;
@@ -815,10 +832,18 @@ const ControleZoom = {
 };
 
 window.onload = async function() {
-  const savedTheme = localStorage.getItem('ultrasvet_theme');
+  const savedTheme = localStorage.(`ultrasvet_theme`);
   if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
     document.documentElement.classList.add('dark');
   } else { document.documentElement.classList.remove('dark'); }
+
+  // Listener nativo para detetar alterações diretas no select de porte da interface
+  const selectPorte = document.getElementById('p-porte');
+  if (selectPorte) {
+    selectPorte.addEventListener('change', () => {
+      AppInterface.handlePorteChange();
+    });
+  }
 
   if (window.CONFIGURACAO_ORGAOS) {
     Object.keys(CONFIGURACAO_ORGAOS).forEach(key => {
