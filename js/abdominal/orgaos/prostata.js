@@ -1,134 +1,107 @@
+// js/abdominal/orgaos/prostata.js
+
 window.CONFIGURACAO_ORGAOS = window.CONFIGURACAO_ORGAOS || {};
 
 window.CONFIGURACAO_ORGAOS.prostata = {
   id: 'prostata',
   nome: 'Próstata',
-  icone: '🧬',
+  icone: '🔵',
   oculto: false,
 
   campos: {
+    posicao: 'em posição tópica (região pélvica/abdominal caudal)',
+    simetria: 'simétrica',
+    contornos: 'regulares',
+    ecogenicidade: 'homogênea',
+    ecotextura: 'fina e homogênea',
     medida1: '0,00',
-    medida2: '0,00',
-    ecogenicidade: 'mantida',
-    ecotextura: 'homogênea',
-    focoMedida: '0,00'
+    medida2: '0,00'
   },
 
   options: {
-    ecogenicidade: [
-      { value: 'mantida', label: 'mantida' },
-      { value: 'alterada', label: 'alterada' }
+    posicao: [
+      { value: 'em posição tópica (região pélvica/abdominal caudal)', label: 'em posição tópica (pélvica/abdominal caudal)' },
+      { value: 'deslocada cranial e/or ventralmente', label: 'deslocada cranial e/ou ventralmente' }
     ],
-    ecotextura: [
+    simetria: [
+      { value: 'simétrica', label: 'simétrica' },
+      { value: 'assimétrica', label: 'assimétrica' }
+    ],
+    contornos: [
+      { value: 'regulares', label: 'regulares' },
+      { value: 'irregulares', label: 'irregulares' }
+    ],
+    ecogenicidade: [
       { value: 'homogênea', label: 'homogênea' },
       { value: 'heterogênea', label: 'heterogênea' }
+    ],
+    ecotextura: [
+      { value: 'fina e homogênea', label: 'fina e homogênea' },
+      { value: 'grosseira e heterogênea', label: 'grosseira e heterogênea' }
     ]
   },
 
   labels: {
-    medida1: 'Comprimento Próstata (cm)',
-    medida2: 'Largura Próstata (cm)',
-    focoMedida: 'Medida do Foco Hipoecogênico (cm)'
+    medida1: 'Comprimento / Diâmetro 1 (cm)',
+    medida2: 'Altura / Diâmetro 2 (cm)'
   },
 
   chipsSelecionados: [],
   chipsPatologias: [
-    { 
-      id: 'Heterogeneidade', 
-      rotulo: 'Detalhe Heterogeneidade', 
-      texto: '' 
-    }
+    { id: 'HBP', rotulo: 'Hiperplasia Prostática Benigna (HPB)', texto: '' },
+    { id: 'Prostatite', rotulo: 'Prostatite / Abscesso', texto: '' },
+    { id: 'Cisto', rotulo: 'Cisto Prostático / Paraprostático', texto: '' }
   ],
 
-  onFieldChange: function(campo, valor) {
-    this.campos[campo] = valor;
+  obterLimiteReferencia: function() {
+    const elPorte = document.getElementById('p-porte');
+    const porteVal = elPorte ? elPorte.value : 'Cão P';
 
-    // Se o usuário trocar a ecotextura para heterogênea, ativa automaticamente o chip de detalhe
-    if (campo === 'ecotextura') {
-      if (valor === 'heterogênea' && !this.chipsSelecionados.includes('Heterogeneidade')) {
-        this.chipsSelecionados.push('Heterogeneidade');
-      } else if (valor === 'homogênea' && this.chipsSelecionados.includes('Heterogeneidade')) {
-        this.chipsSelecionados = this.chipsSelecionados.filter(id => id !== 'Heterogeneidade');
-      }
-    }
+    let limiteMax = 2.5; // Cão P: 2,0 a 2,5 cm
+    if (porteVal === 'Cão M') limiteMax = 3.5; // Cão M: 3,0 a 3,5 cm
+    else if (porteVal === 'Cão G') limiteMax = 4.5; // Cão G: 4,0 a 4,5 cm
+
+    return { porte: porteVal, limite: limiteMax };
   },
 
   gerarTexto: function(c) {
-    return `mensurando ${c.medida1} cm x ${c.medida2} cm, contornos regulares, ecogenicidade ${c.ecogenicidade} e ecotextura ${c.ecotextura}.`;
-  },
+    let txt = `apresentando dimensões preservadas, ${c.posicao}, ${c.simetria}, de contornos ${c.contornos}, ecogenicidade ${c.ecogenicidade} e ecotextura ${c.ecotextura}, sem evidências de cistos ou mineralizações intraparenquimatosas visibilizadas:<br>`;
 
-  gerarTextoAchado: function(chipId, c) {
-    if (chipId === 'Heterogeneidade') {
-      return `Às custas de diminutos focos hipoecogênicos em permeio, medindo um deles cerca de ${c.focoMedida} cm (Sugestivo de prostatopatia associada a cisto / abcesso / neoplasia cavitária).`;
+    const m1 = parseFloat((c.medida1 || '0').replace(',', '.')) || 0;
+    const m2 = parseFloat((c.medida2 || '0').replace(',', '.')) || 0;
+
+    let linhas = [];
+    if (m1 > 0) linhas.push(`• Diâmetro longitudinal: ${c.medida1} cm`);
+    if (m2 > 0) linhas.push(`• Diâmetro transverso / altura: ${c.medida2} cm`);
+
+    if (linhas.length > 0) {
+      txt += linhas.join('<br>');
     }
-    return '';
+
+    return txt;
   },
 
   renderCamposCustomizados: function() {
-    const val1 = parseFloat((this.campos.medida1 || '0').replace(',', '.')) || 0;
-    const val2 = parseFloat((this.campos.medida2 || '0').replace(',', '.')) || 0;
-    const isAlerta = val1 > 2.5 || val2 > 2.5;
-    const temHeteroChip = this.chipsSelecionados.includes('Heterogeneidade');
-
-    let html = `
-      <div class="space-y-3">
-        <div class="p-3 bg-slate-50 dark:bg-zinc-800/60 rounded-xl border border-slate-200 dark:border-zinc-700 space-y-2">
-          <span class="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 block border-b border-slate-200 dark:border-zinc-700 pb-1">Biometria e Aspecto</span>
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="block text-[9px] font-bold text-slate-500 uppercase">Medida 1 (cm)</label>
-              <input type="text" value="${this.campos.medida1}" 
-                     onfocus="if(this.value==='0,00'||this.value==='0')this.value=''" 
-                     onblur="if(this.value.trim()==='')PainelConfigurador.atualizarCampo('prostata', 'medida1', '0,00')"
-                     oninput="PainelConfigurador.atualizarCampo('prostata', 'medida1', this.value)" 
-                     class="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg p-1.5 text-xs text-center font-mono">
-            </div>
-            <div>
-              <label class="block text-[9px] font-bold text-slate-500 uppercase">Medida 2 (cm)</label>
-              <input type="text" value="${this.campos.medida2}" 
-                     onfocus="if(this.value==='0,00'||this.value==='0')this.value=''" 
-                     onblur="if(this.value.trim()==='')PainelConfigurador.atualizarCampo('prostata', 'medida2', '0,00')"
-                     oninput="PainelConfigurador.atualizarCampo('prostata', 'medida2', this.value)" 
-                     class="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg p-1.5 text-xs text-center font-mono">
-            </div>
-          </div>
-          <div class="text-[10px] font-mono text-slate-500 ${isAlerta ? 'text-red-500 font-bold' : ''}">
-            Ref: (Cão P: 2,0 - 2,5cm) ${isAlerta ? '⚠️ Acima da referência' : ''}
-          </div>
+    const ref = this.obterLimiteReferencia();
+    let html = `<div class="space-y-3">
+      <div class="p-3 bg-slate-50 dark:bg-zinc-800/60 rounded-xl border border-slate-200 dark:border-zinc-700 space-y-2">
+        <div class="flex items-center justify-between border-b border-slate-200 dark:border-zinc-700 pb-1">
+          <span class="text-[11px] font-bold text-emerald-700 dark:text-emerald-400">Biometria da Próstata</span>
+          <span class="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold">(Ref: ${ref.porte} até ${ref.limite.toFixed(1).replace('.', ',')}cm)</span>
         </div>
 
-        <div>
-          <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Ecogenicidade</label>
-          <select onchange="PainelConfigurador.atualizarCampo('prostata', 'ecogenicidade', this.value)" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg p-2 text-xs font-semibold dark:text-zinc-200">
-            ${this.options.ecogenicidade.map(opt => `<option value="${opt.value}" ${this.campos.ecogenicidade === opt.value ? 'selected' : ''}>${opt.label}</option>`).join('')}
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Ecotextura</label>
-          <select onchange="PainelConfigurador.atualizarCampo('prostata', 'ecotextura', this.value)" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg p-2 text-xs font-semibold dark:text-zinc-200">
-            ${this.options.ecotextura.map(opt => `<option value="${opt.value}" ${this.campos.ecotextura === opt.value ? 'selected' : ''}>${opt.label}</option>`).join('')}
-          </select>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[9px] font-bold text-slate-500 uppercase mb-0.5">Medida 1 (cm)</label>
+            <input type="text" value="${this.campos.medida1}" oninput="PainelConfigurador.atualizarCampo('prostata', 'medida1', this.value)" class="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg p-1.5 text-xs text-center font-mono font-bold text-emerald-600">
+          </div>
+          <div>
+            <label class="block text-[9px] font-bold text-slate-500 uppercase mb-0.5">Medida 2 (cm)</label>
+            <input type="text" value="${this.campos.medida2}" oninput="PainelConfigurador.atualizarCampo('prostata', 'medida2', this.value)" class="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg p-1.5 text-xs text-center font-mono font-bold text-emerald-600">
+          </div>
         </div>
       </div>
-    `;
-
-    if (temHeteroChip) {
-      html += `
-        <div class="p-3 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-xl space-y-2 mt-3">
-          <span class="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 block border-b border-emerald-200 dark:border-emerald-800 pb-1">Configurações de Heterogeneidade</span>
-          <div>
-            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Medida Foco Hipoecogênico (cm)</label>
-            <input type="text" value="${this.campos.focoMedida}" 
-                   onfocus="if(this.value==='0,00'||this.value==='0')this.value=''" 
-                   onblur="if(this.value.trim()==='')PainelConfigurador.atualizarCampo('prostata', 'focoMedida', '0,00')"
-                   oninput="PainelConfigurador.atualizarCampo('prostata', 'focoMedida', this.value)" 
-                   class="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg p-1.5 text-xs text-center font-mono">
-          </div>
-        </div>
-      `;
-    }
-
+    </div>`;
     return html;
   }
 };
