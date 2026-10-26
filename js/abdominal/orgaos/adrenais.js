@@ -1,3 +1,5 @@
+// js/abdominal/orgaos/adrenais.js
+
 window.CONFIGURACAO_ORGAOS = window.CONFIGURACAO_ORGAOS || {};
 
 window.CONFIGURACAO_ORGAOS.adrenais = {
@@ -116,13 +118,56 @@ window.CONFIGURACAO_ORGAOS.adrenais = {
     this.validarMedidasEAutopreencher();
   },
 
+  obterLimiteReferencia: function() {
+    const selects = document.querySelectorAll('select, input');
+    let especieStr = '';
+    let porteStr = '';
+
+    selects.forEach(el => {
+      const id = (el.id || '').toLowerCase();
+      const val = (el.value || '').toLowerCase();
+      
+      if (id.includes('especie') || id.includes('espc')) {
+        especieStr = val;
+      }
+      if (id.includes('porte') || id.includes('prt')) {
+        porteStr = val;
+      }
+    });
+
+    if (!especieStr) {
+      especieStr = (document.getElementById('p-especie')?.value || document.getElementById('especie')?.value || '').toLowerCase();
+    }
+    if (!porteStr) {
+      porteStr = (document.getElementById('p-porte')?.value || document.getElementById('porte')?.value || '').toLowerCase();
+    }
+
+    const textoCompleta = (especieStr + ' ' + porteStr).toLowerCase();
+
+    if (textoCompleta.includes('felino') || textoCompleta.includes('gato')) {
+      return { label: 'Gato: até 0,40cm', limite: 0.40 };
+    }
+    if (textoCompleta.includes('cão m') || textoCompleta.includes('médio') || textoCompleta.includes('medio') || porteStr === 'm') {
+      return { label: 'Cão M: até 0,70cm', limite: 0.70 };
+    }
+    if (textoCompleta.includes('cão g') || textoCompleta.includes('grande') || textoCompleta.includes('gigante') || porteStr === 'g') {
+      return { label: 'Cão G: até 0,90cm', limite: 0.90 };
+    }
+
+    // Padrão Cão Pequeno / Geral (~0,58cm)
+    return { label: 'Cão P: até 0,58cm', limite: 0.58 };
+  },
+
   validarMedidasEAutopreencher: function() {
     const valEsqCaudalStr = (this.campos.aeCaudal || '0').toString().trim().replace(',', '.');
     const valDirCaudalStr = (this.campos.adCaudal || '0').toString().trim().replace(',', '.');
 
     const valEsqCaudal = parseFloat(valEsqCaudalStr) || 0;
     const valDirCaudal = parseFloat(valDirCaudalStr) || 0;
-    const maxLimit = 0.58; // Referência cão até 10kg
+    
+    // Obtém o limite dinâmico com base no paciente selecionado
+    const ref = this.obterLimiteReferencia();
+    const maxLimit = ref.limite;
 
     if (valEsqCaudalStr !== '0,00' && valEsqCaudalStr !== '0') {
       this.campos.aeDimensao = valEsqCaudal > maxLimit ? 'aumentadas' : 'normais';
@@ -195,6 +240,7 @@ window.CONFIGURACAO_ORGAOS.adrenais = {
 
   renderCamposCustomizados: function() {
     const isNaoCarac = this.campos.naoCaracterizadas;
+    const ref = this.obterLimiteReferencia();
 
     let html = `
       <div class="space-y-3">
@@ -210,8 +256,11 @@ window.CONFIGURACAO_ORGAOS.adrenais = {
 
     if (!isNaoCarac) {
       html += `
+        <div class="flex items-center justify-between px-1">
+          <span class="text-[10px] font-bold text-slate-500 uppercase">Simetria</span>
+          <span class="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold">(Ref: ${ref.label})</span>
+        </div>
         <div>
-          <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Simetria</label>
           <select onchange="PainelConfigurador.atualizarCampo('adrenais', 'simetria', this.value)" class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg p-2 text-xs font-semibold dark:text-zinc-200">
             ${this.options.simetria.map(opt => `<option value="${opt.value}" ${this.campos.simetria === opt.value ? 'selected' : ''}>${opt.label}</option>`).join('')}
           </select>
