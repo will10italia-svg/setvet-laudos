@@ -1,6 +1,6 @@
 /**
  * Setvet - Sistema Diagnóstico & Confecção de Laudo
- * Arquivo: script.js (Código Completo e Integrado)
+ * Arquivo: script.js (Código Completo, Inteiro e Atualizado)
  */
 
 function initIcons() { 
