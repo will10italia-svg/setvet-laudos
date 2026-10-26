@@ -86,7 +86,7 @@ window.CONFIGURACAO_ORGAOS.utero = {
     let limiteMax = 0.80;
     if (porteVal === 'Cão M') limiteMax = 1.00;
     else if (porteVal === 'Cão G') limiteMax = 1.30;
-    else if (porteVal === 'Felino') limiteMax = 0.50;
+    else if (porteVal === 'Felino') limiteMax = 0.80;
 
     return { porte: porteVal, limite: limiteMax };
   },
