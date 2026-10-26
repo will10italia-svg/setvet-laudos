@@ -1,3 +1,5 @@
+// js/abdominal/orgaos/utero.js
+
 window.CONFIGURACAO_ORGAOS = window.CONFIGURACAO_ORGAOS || {};
 
 window.CONFIGURACAO_ORGAOS.utero = {
@@ -84,25 +86,40 @@ window.CONFIGURACAO_ORGAOS.utero = {
     { id: 'Piometra', rotulo: 'Piometra / Alteração Luminal', texto: '' }
   ],
 
+  // Função para detetar dinamicamente o porte selecionado na ficha do paciente
+  obterLimiteReferencia: function() {
+    const elPorte = document.getElementById('p-porte');
+    const porteVal = elPorte ? elPorte.value : 'Cão P';
+
+    let limiteMax = 0.80;
+    if (porteVal === 'Cão M') limiteMax = 1.00;
+    else if (porteVal === 'Cão G') limiteMax = 1.30;
+    else if (porteVal === 'Felino') limiteMax = 0.50;
+
+    return { porte: porteVal, limite: limiteMax };
+  },
+
   onFieldChange: function(campo, valor) {
     this.campos[campo] = valor;
+
+    const ref = this.obterLimiteReferencia();
 
     if (campo === 'estadoEsq' || campo === 'estadoDir') {
       const lado = campo === 'estadoEsq' ? 'Esq' : 'Dir';
       const numVal = parseFloat((this.campos[`medida${lado}`] || '0').replace(',', '.')) || 0;
-      if (valor === 'aumentado' && numVal <= 0.80) {
-        this.campos[`medida${lado}`] = '1,20';
-      } else if (valor === 'normal' && numVal > 0.80) {
-        this.campos[`medida${lado}`] = '0,65';
+      if (valor === 'aumentado' && numVal <= ref.limite) {
+        this.campos[`medida${lado}`] = (ref.limite + 0.40).toFixed(2).replace('.', ',');
+      } else if (valor === 'normal' && numVal > ref.limite) {
+        this.campos[`medida${lado}`] = (ref.limite - 0.15).toFixed(2).replace('.', ',');
       }
     }
 
     if (campo === 'medidaEsq' || campo === 'medidaDir') {
       const lado = campo === 'medidaEsq' ? 'Esq' : 'Dir';
       const numVal = parseFloat((valor || '0').replace(',', '.')) || 0;
-      if (numVal > 0.80) {
+      if (numVal > ref.limite) {
         this.campos[`estado${lado}`] = 'aumentado';
-      } else if (numVal > 0 && numVal <= 0.80) {
+      } else if (numVal > 0 && numVal <= ref.limite) {
         this.campos[`estado${lado}`] = 'normal';
       }
     }
@@ -176,17 +193,12 @@ window.CONFIGURACAO_ORGAOS.utero = {
       txt = txt.replace(/<br>$/, '');
     }
 
-    // Caixa de referência dinâmica
-    const isAlerta = (valEsq > 0.80) || (valDir > 0.80);
-    const classeRef = isAlerta ? 'ref-text alerta-vermelho' : 'ref-text';
-
-    txt += `<div class="${classeRef}"><span>Ref Útero: (Cão P: Cornos 0,50cm - 0,80cm)</span></div>`;
-
     return txt;
   },
 
   renderCamposCustomizados: function() {
     const temAchadoAtivo = this.chipsSelecionados.some(chip => ['HEC', 'Parturicao', 'Piometra'].includes(chip));
+    const ref = this.obterLimiteReferencia();
 
     let html = `<div class="space-y-3">`;
 
@@ -230,10 +242,13 @@ window.CONFIGURACAO_ORGAOS.utero = {
       `;
     }
 
-    // BIOMETRIA DOS CORNOS E CORPO
+    // BIOMETRIA DOS CORNOS E CORPO COM INDICAÇÃO DA REFERÊNCIA DO PORTE
     html += `
       <div class="p-3 bg-slate-50 dark:bg-zinc-800/60 rounded-xl border border-slate-200 dark:border-zinc-700 space-y-2">
-        <span class="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 block border-b border-slate-200 dark:border-zinc-700 pb-1">Biometria (Cornos e Corpo)</span>
+        <div class="flex items-center justify-between border-b border-slate-200 dark:border-zinc-700 pb-1">
+          <span class="text-[11px] font-bold text-emerald-700 dark:text-emerald-400">Biometria (Cornos e Corpo)</span>
+          <span class="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold">(Ref: ${ref.porte} até ${ref.limite.toFixed(2).replace('.', ',')}cm)</span>
+        </div>
         
         <!-- CORNO ESQUERDO -->
         <div class="grid grid-cols-2 gap-2">
@@ -249,7 +264,7 @@ window.CONFIGURACAO_ORGAOS.utero = {
                    onfocus="if(this.value==='0,00'||this.value==='0')this.value=''" 
                    onblur="if(this.value.trim()==='')PainelConfigurador.atualizarCampo('utero', 'medidaEsq', '0,00')"
                    oninput="PainelConfigurador.atualizarCampo('utero', 'medidaEsq', this.value)" 
-                   class="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg p-1.5 text-xs text-center font-mono">
+                   class="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg p-1.5 text-xs text-center font-mono font-bold text-emerald-600">
           </div>
         </div>
 
@@ -258,7 +273,7 @@ window.CONFIGURACAO_ORGAOS.utero = {
           <div>
             <label class="block text-[9px] font-bold text-slate-500 uppercase mb-0.5">Estado Corno Dir.</label>
             <select onchange="PainelConfigurador.atualizarCampo('utero', 'estadoDir', this.value)" class="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg p-1.5 text-xs font-semibold">
-              ${this.options.estadoCorno.map(opt => `<option value="${opt.value}" ${this.campos.estadoDir === opt.value ? 'selected' : ''}>${opt.label}</option>`).join('')}
+              ${this.options.estadoCorno.map(opt =><option value="${opt.value}" ${this.campos.estadoDir === opt.value ? 'selected' : ''}>${opt.label}</option>`).join('')}
             </select>
           </div>
           <div>
@@ -267,7 +282,7 @@ window.CONFIGURACAO_ORGAOS.utero = {
                    onfocus="if(this.value==='0,00'||this.value==='0')this.value=''" 
                    onblur="if(this.value.trim()==='')PainelConfigurador.atualizarCampo('utero', 'medidaDir', '0,00')"
                    oninput="PainelConfigurador.atualizarCampo('utero', 'medidaDir', this.value)" 
-                   class="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg p-1.5 text-xs text-center font-mono">
+                   class="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg p-1.5 text-xs text-center font-mono font-bold text-emerald-600">
           </div>
         </div>
 
@@ -318,7 +333,7 @@ window.CONFIGURACAO_ORGAOS.utero = {
               <input type="text" value="${this.campos.hecMedidaDir}" 
                      onfocus="if(this.value==='0,00')this.value=''" 
                      onblur="if(this.value.trim()==='')PainelConfigurador.atualizarCampo('utero', 'hecMedidaDir', '0,00')"
-                     oninput="PainelConfigurador.atualizarCampo('utero', 'hecMedidaDir', this.value)" 
+                     oninput="PainelConfigurador.atualizarCampor('utero', 'hecMedidaDir', this.value)" 
                      class="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg p-1.5 text-xs text-center font-mono">
             </div>
           </div>
@@ -332,7 +347,7 @@ window.CONFIGURACAO_ORGAOS.utero = {
         <div class="p-3 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-xl space-y-2 mt-3">
           <span class="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 block border-b border-emerald-200 dark:border-emerald-800 pb-1">Piometra / Alteração Luminal</span>
           <div>
-            <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">Conteúdo Luminal</label>
+            <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">Conteúdo luminal</label>
             <select onchange="PainelConfigurador.atualizarCampo('utero', 'piometraConteudoTipo', this.value)" class="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg p-1.5 text-xs">
               ${this.options.piometraConteudoTipo.map(opt => `<option value="${opt.value}" ${this.campos.piometraConteudoTipo === opt.value ? 'selected' : ''}>${opt.label}</option>`).join('')}
             </select>
