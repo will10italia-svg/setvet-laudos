@@ -1,6 +1,6 @@
 /**
  * Setvet - Sistema Diagnóstico & Confecção de Laudo
- * Arquivo: script.js (Código Principal Completo, Atualizado e Corrigido para Adrenais)
+ * Arquivo: script.js (Código Principal Completo, Atualizado e Corrigido para Adrenais, Útero e Próstata)
  */
 
 function initIcons() { 
@@ -463,20 +463,24 @@ const MotorLaudo = {
           const maxValStr = Math.max(valE, valD) > 0 ? Math.max(valE, valD).toFixed(2).replace('.', ',') : '0,00';
           
           refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_adrenais', this)">Ref Polo Caudal: (${porte || 'Cão P'}: até ${lim.toFixed(2).replace('.', ',')}cm - Medido: ${maxValStr}cm)</span>`;
+        } else if (idOrgao === 'utero') {
+          const valE = parseFloat((orgao.campos.medidaEsq || '0').toString().replace(',', '.')) || 0;
+          const valD = parseFloat((orgao.campos.medidaDir || '0').toString().replace(',', '.')) || 0;
+          const alertClass = (valE > 0 && valE > 0.80) || (valD > 0 && valD > 0.80) ? 'is-alert alerta-vermelho' : '';
+          const maxValStr = Math.max(valE, valD) > 0 ? Math.max(valE, valD).toFixed(2).replace('.', ',') : '0,00';
+          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_utero', this)">Ref Útero: (${porte || 'Cão P'}: Cornos 0,50cm - 0,80cm - Medido: ${maxValStr}cm)</span>`;
+        } else if (idOrgao === 'prostata') {
+          const val1 = parseFloat((orgao.campos.medida1 || '0').toString().replace(',', '.')) || 0;
+          const val2 = parseFloat((orgao.campos.medida2 || '0').toString().replace(',', '.')) || 0;
+          const maxMed = Math.max(val1, val2);
+          const alertClass = (maxMed > 0 && maxMed > 2.5) ? 'is-alert alerta-vermelho' : '';
+          const medFormatada = maxMed > 0 ? maxMed.toFixed(2).replace('.', ',') : '0,00';
+          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_prostata', this)">Ref Próstata: (${porte || 'Cão P'}: até 2,5cm - Medido: ${medFormatada}cm)</span>`;
         } else if (idOrgao === 'ovarios') {
           const valE = parseFloat((orgao.campos.medidaEsq || orgao.campos.oeMedida || '0').toString().replace(',', '.')) || 0;
           const valD = parseFloat((orgao.campos.medidaDir || orgao.campos.odMedida || '0').toString().replace(',', '.')) || 0;
           const alertClass = (valE > 2.0 || valD > 2.0) ? 'is-alert alerta-vermelho' : '';
           refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_ovarios', this)">Ref Ovários: (Até 2,0cm)</span>`;
-        } else if (idOrgao === 'utero') {
-          const valE = parseFloat((orgao.campos.medidaEsq || '0').toString().replace(',', '.')) || 0;
-          const valD = parseFloat((orgao.campos.medidaDir || '0').toString().replace(',', '.')) || 0;
-          const alertClass = (valE > 0.80 || valD > 0.80) ? 'is-alert alerta-vermelho' : '';
-          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_utero', this)">Ref Útero: (0,50cm - 0,80cm)</span>`;
-        } else if (idOrgao === 'prostata') {
-          const val1 = parseFloat((orgao.campos.medida1 || orgao.campos.medida || '0').toString().replace(',', '.')) || 0;
-          const alertClass = (val1 > 2.5) ? 'is-alert alerta-vermelho' : '';
-          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_prostata', this)">Ref Próstata: (Até 2,5cm)</span>`;
         }
       }
 
