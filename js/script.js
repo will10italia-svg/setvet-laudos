@@ -1,6 +1,6 @@
 /**
  * Setvet - Sistema Diagnóstico & Confecção de Laudo
- * Arquivo: script.js (Código Principal Completo, Atualizado e Corrigido)
+ * Arquivo: script.js (Código Principal Completo, Atualizado e Corrigido para Adrenais)
  */
 
 function initIcons() { 
@@ -447,11 +447,22 @@ const MotorLaudo = {
           const alertClass = (med > 0 && med > lim) ? 'is-alert alerta-vermelho' : '';
           refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_pancreas', this)">Ref Pâncreas: (${especie || 'Canino'}: até ${lim.toFixed(1).replace('.', ',')}cm)</span>`;
         } else if (idOrgao === 'adrenais') {
-          const valE = parseFloat((orgao.campos.medidaEsq || orgao.campos.aeCaudal || '0').toString().replace(',', '.')) || 0;
-          const valD = parseFloat((orgao.campos.medidaDir || orgao.campos.adCaudal || '0').toString().replace(',', '.')) || 0;
-          const lim = porte === 'Felino' ? 0.45 : 0.58;
-          const alertClass = (valE > lim || valD > lim) ? 'is-alert alerta-vermelho' : '';
-          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_adrenais', this)">Ref Polo Caudal: (${porte || 'Cão P'}: até ${lim.toFixed(2).replace('.', ',')}cm)</span>`;
+          const valE = parseFloat((orgao.campos.aeCaudal || '0').toString().replace(',', '.')) || 0;
+          const valD = parseFloat((orgao.campos.adCaudal || '0').toString().replace(',', '.')) || 0;
+          
+          let lim = 0.58;
+          if (porte === 'Felino' || especie === 'Felino') {
+            lim = 0.40;
+          } else if (porte === 'Cão M') {
+            lim = 0.68;
+          } else if (porte === 'Cão G') {
+            lim = 0.80;
+          }
+
+          const alertClass = ((valE > 0 && valE > lim) || (valD > 0 && valD > lim)) ? 'is-alert alerta-vermelho' : '';
+          const maxValStr = Math.max(valE, valD) > 0 ? Math.max(valE, valD).toFixed(2).replace('.', ',') : '0,00';
+          
+          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_adrenais', this)">Ref Polo Caudal: (${porte || 'Cão P'}: até ${lim.toFixed(2).replace('.', ',')}cm - Medido: ${maxValStr}cm)</span>`;
         } else if (idOrgao === 'ovarios') {
           const valE = parseFloat((orgao.campos.medidaEsq || orgao.campos.oeMedida || '0').toString().replace(',', '.')) || 0;
           const valD = parseFloat((orgao.campos.medidaDir || orgao.campos.odMedida || '0').toString().replace(',', '.')) || 0;
