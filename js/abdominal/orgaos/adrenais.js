@@ -124,7 +124,7 @@ window.CONFIGURACAO_ORGAOS.adrenais = {
     const porteVal = elPorte ? elPorte.value.toLowerCase() : '';
 
     if (especieVal.includes('felino') || especieVal.includes('gato') || porteVal.includes('felino')) {
-      return { label: 'Gato: até 0,40cm', limite: 0.40 };
+      return { label: 'Gato: até 0,45cm', limite: 0.40 };
     }
 
     if (porteVal.includes('g') || porteVal.includes('grande')) {
