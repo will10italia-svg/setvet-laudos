@@ -25,8 +25,8 @@ window.CONFIGURACAO_ORGAOS.utero = {
     // Achado: HEC
     hecParedesTipo: 'espessadas',
     hecConteudoTipo: 'anecogênico e homogêneo',
-    hecMedidaEsq: '0,00',
-    hecMedidaDir: '0,00',
+    hecMedidaEsq: '0,0',
+    hecMedidaDir: '0,0',
 
     // Achado: Piometra / Alteração Luminal
     piometraConteudoTipo: 'ecogênico/anecogênico com diversas estruturas puntiformes e ecogênicas entremeadas (celularidade)'
@@ -273,7 +273,7 @@ window.CONFIGURACAO_ORGAOS.utero = {
           <div>
             <label class="block text-[9px] font-bold text-slate-500 uppercase mb-0.5">Estado Corno Dir.</label>
             <select onchange="PainelConfigurador.atualizarCampo('utero', 'estadoDir', this.value)" class="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg p-1.5 text-xs font-semibold">
-              ${this.options.estadoCorno.map(opt =><option value="${opt.value}" ${this.campos.estadoDir === opt.value ? 'selected' : ''}>${opt.label}</option>`).join('')}
+              ${this.options.estadoCorno.map(opt => `<option value="${opt.value}" ${this.campos.estadoDir === opt.value ? 'selected' : ''}>${opt.label}</option>`).join('')}
             </select>
           </div>
           <div>
@@ -323,17 +323,17 @@ window.CONFIGURACAO_ORGAOS.utero = {
             <div>
               <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">Maior Cisto Corno Esq. (cm)</label>
               <input type="text" value="${this.campos.hecMedidaEsq}" 
-                     onfocus="if(this.value==='0,00')this.value=''" 
-                     onblur="if(this.value.trim()==='')PainelConfigurador.atualizarCampo('utero', 'hecMedidaEsq', '0,00')"
+                     onfocus="if(this.value==='0,0')this.value=''" 
+                     onblur="if(this.value.trim()==='')PainelConfigurador.atualizarCampo('utero', 'hecMedidaEsq', '0,0')"
                      oninput="PainelConfigurador.atualizarCampo('utero', 'hecMedidaEsq', this.value)" 
                      class="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg p-1.5 text-xs text-center font-mono">
             </div>
             <div>
               <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">Maior Cisto Corno Dir. (cm)</label>
               <input type="text" value="${this.campos.hecMedidaDir}" 
-                     onfocus="if(this.value==='0,00')this.value=''" 
-                     onblur="if(this.value.trim()==='')PainelConfigurador.atualizarCampo('utero', 'hecMedidaDir', '0,00')"
-                     oninput="PainelConfigurador.atualizarCampor('utero', 'hecMedidaDir', this.value)" 
+                     onfocus="if(this.value==='0,0')this.value=''" 
+                     onblur="if(this.value.trim()==='')PainelConfigurador.atualizarCampo('utero', 'hecMedidaDir', '0,0')"
+                     oninput="PainelConfigurador.atualizarCampo('utero', 'hecMedidaDir', this.value)" 
                      class="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg p-1.5 text-xs text-center font-mono">
             </div>
           </div>
