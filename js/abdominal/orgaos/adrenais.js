@@ -117,37 +117,23 @@ window.CONFIGURACAO_ORGAOS.adrenais = {
   },
 
   obterLimiteReferencia: function() {
-    let textoCompleto = '';
+    const elEspecie = document.getElementById('p-especie');
+    const elPorte = document.getElementById('p-porte');
 
-    // Tenta ler diretamente de todos os selects e inputs da página do painel esquerdo
-    const elementos = document.querySelectorAll('select, input');
-    elementos.forEach(el => {
-      const id = (el.id || '').toLowerCase();
-      const val = (el.value || '').toLowerCase();
-      let textoOpcao = '';
-      if (el.tagName === 'SELECT' && el.selectedIndex >= 0) {
-        textoOpcao = (el.options[el.selectedIndex].text || '').toLowerCase();
-      }
-      textoCompleto += ` ${id} ${val} ${textoOpcao}`;
-    });
+    const especieVal = elEspecie ? elEspecie.value.toLowerCase() : '';
+    const porteVal = elPorte ? elPorte.value.toLowerCase() : '';
 
-    // Identifica espécie
-    const ehGato = textoCompleta.includes('gato') || textoCompleta.includes('felino');
-
-    if (ehGato) {
+    if (especieVal.includes('felino') || especieVal.includes('gato') || porteVal.includes('felino')) {
       return { label: 'Gato: até 0,40cm', limite: 0.40 };
     }
 
-    // Identifica porte do cão de forma abrangente
-    if (textoCompleta.includes('grande') || textoCompleta.includes('gigante') || textoCompleta.includes('porte g') || textoCompleta.includes(' 80') || textoCompleta.includes('"g"') || textoCompleta.includes('value="g"')) {
+    if (porteVal.includes('g') || porteVal.includes('grande')) {
       return { label: 'Cão G: até 0,80cm', limite: 0.80 };
     }
-    
-    if (textoCompleta.includes('médio') || textoCompleta.includes('medio') || textoCompleta.includes('porte m') || textoCompleta.includes('"m"') || textoCompleta.includes('value="m"')) {
+    if (porteVal.includes('m') || porteVal.includes('médio') || porteVal.includes('medio')) {
       return { label: 'Cão M: até 0,68cm', limite: 0.68 };
     }
 
-    // Padrão Cão Pequeno (P)
     return { label: 'Cão P: até 0,58cm', limite: 0.58 };
   },
 
@@ -274,24 +260,24 @@ window.CONFIGURACAO_ORGAOS.adrenais = {
                   <label class="block text-[9px] font-bold text-slate-500 uppercase">Comp. (cm)</label>
                   <input type="text" value="${this.campos.aeComp}" 
                          onfocus="if(this.value==='0,00'||this.value==='0')this.value=''" 
-                         onblur="if(this.value.trim()==='')PainelConfigurador.atualizarCampo('adrenais', 'aeComp', '0,00')"
-                         oninput="PainelConfigurador.atualizarCampo('adrenais', 'aeComp', this.value)" 
+                         onblur="if(this.value.trim()===''){ PainelConfigurador.atualizarCampo('adrenais', 'aeComp', '0,00'); CONFIGURACAO_ORGAOS.adrenais.validarMedidasEAutopreencher(); }"
+                         oninput="PainelConfigurador.atualizarCampo('adrenais', 'aeComp', this.value); CONFIGURACAO_ORGAOS.adrenais.validarMedidasEAutopreencher();" 
                          class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg p-1.5 text-xs text-center font-mono">
                 </div>
                 <div>
                   <label class="block text-[9px] font-bold text-slate-500 uppercase">Cranial (cm)</label>
                   <input type="text" value="${this.campos.aeCranial}" 
                          onfocus="if(this.value==='0,00'||this.value==='0')this.value=''" 
-                         onblur="if(this.value.trim()==='')PainelConfigurador.atualizarCampo('adrenais', 'aeCranial', '0,00')"
-                         oninput="PainelConfigurador.atualizarCampo('adrenais', 'aeCranial', this.value)" 
+                         onblur="if(this.value.trim()===''){ PainelConfigurador.atualizarCampo('adrenais', 'aeCranial', '0,00'); CONFIGURACAO_ORGAOS.adrenais.validarMedidasEAutopreencher(); }"
+                         oninput="PainelConfigurador.atualizarCampo('adrenais', 'aeCranial', this.value); CONFIGURACAO_ORGAOS.adrenais.validarMedidasEAutopreencher();" 
                          class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg p-1.5 text-xs text-center font-mono">
                 </div>
                 <div>
                   <label class="block text-[9px] font-bold text-slate-500 uppercase">Caudal (cm)</label>
                   <input type="text" value="${this.campos.aeCaudal}" 
                          onfocus="if(this.value==='0,00'||this.value==='0')this.value=''" 
-                         onblur="if(this.value.trim()==='')PainelConfigurador.atualizarCampo('adrenais', 'aeCaudal', '0,00')"
-                         oninput="PainelConfigurador.atualizarCampo('adrenais', 'aeCaudal', this.value)" 
+                         onblur="if(this.value.trim()===''){ PainelConfigurador.atualizarCampo('adrenais', 'aeCaudal', '0,00'); CONFIGURACAO_ORGAOS.adrenais.validarMedidasEAutopreencher(); }"
+                         oninput="PainelConfigurador.atualizarCampo('adrenais', 'aeCaudal', this.value); CONFIGURACAO_ORGAOS.adrenais.validarMedidasEAutopreencher();" 
                          class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg p-1.5 text-xs text-center font-mono font-bold text-emerald-600">
                 </div>
               </div>
@@ -321,24 +307,24 @@ window.CONFIGURACAO_ORGAOS.adrenais = {
                   <label class="block text-[9px] font-bold text-slate-500 uppercase">Comp. (cm)</label>
                   <input type="text" value="${this.campos.adComp}" 
                          onfocus="if(this.value==='0,00'||this.value==='0')this.value=''" 
-                         onblur="if(this.value.trim()==='')PainelConfigurador.atualizarCampo('adrenais', 'adComp', '0,00')"
-                         oninput="PainelConfigurador.atualizarCampo('adrenais', 'adComp', this.value)" 
+                         onblur="if(this.value.trim()===''){ PainelConfigurador.atualizarCampo('adrenais', 'adComp', '0,00'); CONFIGURACAO_ORGAOS.adrenais.validarMedidasEAutopreencher(); }"
+                         oninput="PainelConfigurador.atualizarCampo('adrenais', 'adComp', this.value); CONFIGURACAO_ORGAOS.adrenais.validarMedidasEAutopreencher();" 
                          class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg p-1.5 text-xs text-center font-mono">
                 </div>
                 <div>
                   <label class="block text-[9px] font-bold text-slate-500 uppercase">Cranial (cm)</label>
                   <input type="text" value="${this.campos.adCranial}" 
                          onfocus="if(this.value==='0,00'||this.value==='0')this.value=''" 
-                         onblur="if(this.value.trim()==='')PainelConfigurador.atualizarCampo('adrenais', 'adCranial', '0,00')"
-                         oninput="PainelConfigurador.atualizarCampo('adrenais', 'adCranial', this.value)" 
+                         onblur="if(this.value.trim()===''){ PainelConfigurador.atualizarCampo('adrenais', 'adCranial', '0,00'); CONFIGURACAO_ORGAOS.adrenais.validarMedidasEAutopreencher(); }"
+                         oninput="PainelConfigurador.atualizarCampo('adrenais', 'adCranial', this.value); CONFIGURACAO_ORGAOS.adrenais.validarMedidasEAutopreencher();" 
                          class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg p-1.5 text-xs text-center font-mono">
                 </div>
                 <div>
                   <label class="block text-[9px] font-bold text-slate-500 uppercase">Caudal (cm)</label>
                   <input type="text" value="${this.campos.adCaudal}" 
                          onfocus="if(this.value==='0,00'||this.value==='0')this.value=''" 
-                         onblur="if(this.value.trim()==='')PainelConfigurador.atualizarCampo('adrenais', 'adCaudal', '0,00')"
-                         oninput="PainelConfigurador.atualizarCampo('adrenais', 'adCaudal', this.value)" 
+                         onblur="if(this.value.trim()===''){ PainelConfigurador.atualizarCampo('adrenais', 'adCaudal', '0,00'); CONFIGURACAO_ORGAOS.adrenais.validarMedidasEAutopreencher(); }"
+                         oninput="PainelConfigurador.atualizarCampo('adrenais', 'adCaudal', this.value); CONFIGURACAO_ORGAOS.adrenais.validarMedidasEAutopreencher();" 
                          class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg p-1.5 text-xs text-center font-mono font-bold text-emerald-600">
                 </div>
               </div>
@@ -459,7 +445,7 @@ window.CONFIGURACAO_ORGAOS.adrenais = {
                          class="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg p-1.5 text-xs text-center font-mono">
                 </div>
                 <div>
-                  <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">Esp. 2º Nódulo (cm)</label>
+                  <label class="block text-[9px] font-bold text-slate-500 uppercase sm:uppercase mb-1">Esp. 2º Nódulo (cm)</label>
                   <input type="text" value="${this.campos.noduloMedida2Esp}" 
                          onfocus="if(this.value==='0,0')this.value=''" 
                          onblur="if(this.value.trim()==='')PainelConfigurador.atualizarCampo('adrenais', 'noduloMedida2Esp', '0,0')"
