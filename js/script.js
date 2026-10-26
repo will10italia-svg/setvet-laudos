@@ -1,6 +1,6 @@
 /**
  * Setvet - Sistema Diagnóstico & Confecção de Laudo
- * Arquivo: script.js (Código Principal Completo e Corrigido)
+ * Arquivo: script.js (Código Completo e Integrado)
  */
 
 function initIcons() { 
@@ -326,4 +326,494 @@ const AppInterface = {
     const statusRepro = document.getElementById('p-statusReprodutivo');
     if (statusRepro) {
       if (sexo === 'Fêmea') { statusRepro.options[0].text = 'Castrada'; statusRepro.options[1].text = 'Não Castrada'; }
-      else { statusRepro.options[0].
+      else { statusRepro.options[0].text = 'Castrado'; statusRepro.options[1].text = 'Não Castrado'; }
+    }
+    PainelConfigurador.inicializarSeletor();
+    MotorLaudo.atualizarPaginasLaudo();
+  },
+
+  addNovaRaca: function() {
+    const selectRaca = document.getElementById('p-raca');
+    if (!selectRaca) return;
+    const nova = prompt("Digite o nome da nova raça:");
+    if (nova && nova.trim() !== "") {
+      const opt = document.createElement('option');
+      opt.value = nova.trim(); opt.text = nova.trim(); opt.selected = true;
+      selectRaca.appendChild(opt);
+      MotorLaudo.atualizarPaginasLaudo();
+    }
+  }
+};
+
+const MotorLaudo = {
+  atualizarPaginasLaudo: function() {
+    AppInterface.marcarComoRascunho();
+    const container = document.getElementById('a4WrapperScale');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const val = id => document.getElementById(id)?.value || '';
+    const paciente = val('p-paciente');
+    const idAnimal = val('p-idAnimal');
+    const especie = val('p-especie');
+    const raca = val('p-raca');
+    const sexo = val('p-sexo');
+    const statusReproVal = val('p-statusReprodutivo');
+    const tutor = val('p-responsavel');
+    const clinica = val('p-clinica');
+    const porte = val('p-porte');
+
+    let textoStatusRepro = '';
+    if (statusReproVal) {
+      textoStatusRepro = statusReproVal === 'Castrado' ? (sexo === 'Fêmea' ? 'Castrada' : 'Castrado') : (sexo === 'Fêmea' ? 'Não Castrada' : 'Não Castrado');
+    }
+
+    const sanitize = s => (s||"").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9-]/g, "_").trim();
+    const nomeArquivoPdf = paciente ? `Laudo_${sanitize(paciente)}_${sanitize(tutor)}.pdf` : 'Laudo.pdf';
+    const labelElem = document.getElementById('label-filename');
+    if (labelElem) labelElem.innerText = nomeArquivoPdf;
+
+    let blocosHTML = [];
+    if (typeof ModuloPainelPaciente !== 'undefined' && ModuloPainelPaciente.renderizarFicha) {
+      blocosHTML.push(ModuloPainelPaciente.renderizarFicha(paciente, idAnimal, tutor, especie, raca, sexo, textoStatusRepro, val('p-idadeAnos'), val('p-idadeMeses'), porte, val('p-requisitante'), clinica));
+    }
+
+    blocosHTML.push(`<div class="a4-section-title">ACHADOS ULTRASSONOGRÁFICOS</div>`);
+
+    Object.entries(CONFIGURACAO_ORGAOS).forEach(([chave, orgao]) => {
+      if (orgao.oculto) return;
+      const idOrgao = orgao.id || chave;
+
+      const textoCalculado = orgao.gerarTexto(orgao.campos);
+      const textoFinal = EstadoApp.textosEditadosManualmente[idOrgao] || textoCalculado;
+
+      let refHtml = '';
+      const jaPossuiRef = textoFinal && textoFinal.includes('ref-text');
+      if (!jaPossuiRef) {
+        if (idOrgao === 'estomago') {
+          const valRaw = orgao.campos.medida || orgao.campos.espessura || orgao.campos.parede || '0';
+          const med = parseFloat(valRaw.toString().replace(',', '.')) || 0;
+          let lim = 0.30;
+          if (porte === 'Cão M') lim = 0.40;
+          else if (porte === 'Cão G') lim = 0.50;
+          else if (porte === 'Felino') lim = 0.30;
+          const alertClass = (med > 0 && med > lim) ? 'is-alert alerta-vermelho' : '';
+          const medFormatada = med > 0 ? med.toFixed(2).replace('.', ',') : '0,00';
+          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_estomago', this)">Ref: (${porte || 'Cão P'}: até ${lim.toFixed(2).replace('.', ',')}cm - Medido: ${medFormatada}cm)</span>`;
+        } else if (idOrgao === 'rins') {
+          const valE = parseFloat((orgao.campos.medidaEsq || orgao.campos.rimeMedida || '0').toString().replace(',', '.')) || 0;
+          const valD = parseFloat((orgao.campos.medidaDir || orgao.campos.rimdMedida || '0').toString().replace(',', '.')) || 0;
+          const maxLim = porte === 'Felino' ? 4.3 : (porte === 'Cão G' ? 7.0 : (porte === 'Cão M' ? 5.5 : 4.0));
+          const alertClass = (valE > maxLim || valD > maxLim) ? 'is-alert alerta-vermelho' : '';
+          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_rins', this)">Ref Rins: (${porte || 'Cão P'} até ${maxLim.toFixed(1).replace('.', ',')}cm)</span>`;
+        } else if (idOrgao === 'vesicula_urinaria') {
+          const med = parseFloat((orgao.campos.medidaParedes || orgao.campos.medida || '0').toString().replace(',', '.')) || 0;
+          const lim = especie === 'Felino' ? 0.20 : 0.30;
+          const alertClass = (med > 0 && med > lim) ? 'is-alert alerta-vermelho' : '';
+          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_vesicula_urinaria', this)">Ref: (${especie || 'Canino'}: até ${lim.toFixed(2).replace('.', ',')}cm)</span>`;
+        } else if (idOrgao === 'pancreas') {
+          const med = parseFloat((orgao.campos.medida || '0').toString().replace(',', '.')) || 0;
+          const lim = especie === 'Felino' ? 0.8 : 1.0;
+          const alertClass = (med > 0 && med > lim) ? 'is-alert alerta-vermelho' : '';
+          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_pancreas', this)">Ref Pâncreas: (${especie || 'Canino'}: até ${lim.toFixed(1).replace('.', ',')}cm)</span>`;
+        } else if (idOrgao === 'adrenais') {
+          const valE = parseFloat((orgao.campos.aeCaudal || '0').toString().replace(',', '.')) || 0;
+          const valD = parseFloat((orgao.campos.adCaudal || '0').toString().replace(',', '.')) || 0;
+          let lim = 0.58;
+          if (porte === 'Felino' || especie === 'Felino') lim = 0.40;
+          else if (porte === 'Cão M') lim = 0.68;
+          else if (porte === 'Cão G') lim = 0.80;
+          const alertClass = ((valE > 0 && valE > lim) || (valD > 0 && valD > lim)) ? 'is-alert alerta-vermelho' : '';
+          const maxValStr = Math.max(valE, valD) > 0 ? Math.max(valE, valD).toFixed(2).replace('.', ',') : '0,00';
+          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_adrenais', this)">Ref Polo Caudal: (${porte || 'Cão P'}: até ${lim.toFixed(2).replace('.', ',')}cm - Medido: ${maxValStr}cm)</span>`;
+        } else if (idOrgao === 'utero') {
+          const valE = parseFloat((orgao.campos.medidaEsq || '0').toString().replace(',', '.')) || 0;
+          const valD = parseFloat((orgao.campos.medidaDir || '0').toString().replace(',', '.')) || 0;
+          
+          let limUtero = 0.80;
+          if (porte === 'Cão M') limUtero = 1.00;
+          else if (porte === 'Cão G') limUtero = 1.30;
+          else if (porte === 'Felino' || especie === 'Felino') limUtero = 0.80;
+
+          const alertClass = (valE > 0 && valE > limUtero) || (valD > 0 && valD > limUtero) ? 'is-alert alerta-vermelho' : '';
+          const maxValStr = Math.max(valE, valD) > 0 ? Math.max(valE, valD).toFixed(2).replace('.', ',') : '0,00';
+          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_utero', this)">Ref Útero: (${porte || 'Cão P'}: até ${limUtero.toFixed(2).replace('.', ',')}cm - Medido: ${maxValStr}cm)</span>`;
+        } else if (idOrgao === 'prostata') {
+          if (especie === 'Felino' || porte === 'Felino') {
+            refHtml = `<span class="ref-text" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_prostata', this)">Ref Próstata: (Espécie felina - sem referência rotineira)</span>`;
+          } else {
+            const val1 = parseFloat((orgao.campos.medida1 || '0').toString().replace(',', '.')) || 0;
+            const val2 = parseFloat((orgao.campos.medida2 || '0').toString().replace(',', '.')) || 0;
+            const maxMed = Math.max(val1, val2);
+
+            let limMin = 2.0, limMax = 2.5, nomePorteRef = 'Cão P';
+            if (porte === 'Cão M') { limMin = 3.0; limMax = 3.5; nomePorteRef = 'Cão M'; }
+            else if (porte === 'Cão G') { limMin = 4.0; limMax = 4.5; nomePorteRef = 'Cão G'; }
+
+            const alertClass = (maxMed > 0 && maxMed > limMax) ? 'is-alert alerta-vermelho' : '';
+            const medFormatada = maxMed > 0 ? maxMed.toFixed(2).replace('.', ',') : '0,00';
+            refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_prostata', this)">Ref Próstata: (${nomePorteRef}: ${limMin.toFixed(1).replace('.', ',')} a ${limMax.toFixed(1).replace('.', ',')}cm - Medido: ${medFormatada}cm)</span>`;
+          }
+        } else if (idOrgao === 'ovarios') {
+          const valE = parseFloat((orgao.campos.medidaEsq || orgao.campos.oeMedida || '0').toString().replace(',', '.')) || 0;
+          const valD = parseFloat((orgao.campos.medidaDir || orgao.campos.odMedida || '0').toString().replace(',', '.')) || 0;
+          const alertClass = (valE > 2.0 || valD > 2.0) ? 'is-alert alerta-vermelho' : '';
+          refHtml = `<span class="ref-text ${alertClass}" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('ref_ovarios', this)">Ref Ovários: (Até 2,0cm)</span>`;
+        }
+      }
+
+      if (textoFinal && textoFinal.trim() !== '') {
+        blocosHTML.push(`
+          <div class="a4-organ-item">
+            <div>
+              <span class="a4-organ-name" onclick="PainelConfigurador.trocarOrgaoAtivo('${idOrgao}')" title="Configurar ${orgao.nome}">${orgao.nome}:</span> 
+              <span class="a4-organ-content" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('${idOrgao}', this)">${textoFinal}</span>
+            </div>
+            ${refHtml}
+          </div>
+        `);
+      }
+
+      if (orgao.chipsSelecionados && orgao.chipsSelecionados.length > 0) {
+        orgao.chipsSelecionados.forEach(chipId => {
+          let textoChip = typeof orgao.gerarTextoAchado === 'function' ? orgao.gerarTextoAchado(chipId, orgao.campos) : '';
+          if (!textoChip) {
+            const chipObj = orgao.chipsPatologias.find(c => c.id === chipId);
+            textoChip = chipObj ? chipObj.texto : `Achado de ${chipId} em ${orgao.nome}.`;
+          }
+          const keyChip = `chip_${idOrgao}_${chipId}`;
+          const textoChipFinal = EstadoApp.textosEditadosManualmente[keyChip] || `<strong>[${chipId}]:</strong> ${textoChip}`;
+          blocosHTML.push(`<div class="achado-adicional-highlight" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('${keyChip}', this)">${textoChipFinal}</div>`);
+        });
+      }
+    });
+
+    EstadoApp.orgaosAdicionais.forEach(oa => {
+      const txtAdicionalFinal = EstadoApp.textosEditadosManualmente[oa.id] || oa.texto;
+      blocosHTML.push(`<div class="a4-organ-item"><div><span class="a4-organ-name" onclick="PainelConfigurador.trocarOrgaoAtivo('${oa.id}')">${oa.nome}:</span> <span class="a4-organ-content" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('${oa.id}', this)">${txtAdicionalFinal}</span></div></div>`);
+    });
+
+    const isChk = id => document.getElementById(id)?.checked;
+    if (isChk('chk-obs-hist')) {
+      const txtHist = EstadoApp.textosEditadosManualmente['chk_obs_hist'] || "<b>OBS:</b> A avaliação ultrassonográfica não determina a natureza histológica da estrutura estudada, recomenda-se avaliação citológica e/ou histológica.";
+      blocosHTML.push(`<div class="general-phrase-item" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('chk_obs_hist', this)">${txtHist}</div>`);
+    }
+    if (isChk('chk-linfo') && !CONFIGURACAO_ORGAOS['linfonodos']) {
+      const txtLinfo = EstadoApp.textosEditadosManualmente['chk_linfo'] || "Não foram observados sinais sonográficos de alteração/aumento em região topográfica de linfonodos visibilizados.";
+      blocosHTML.push(`<div class="a4-organ-item"><div><span class="a4-organ-name">Linfonodos:</span> <span class="a4-organ-content" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('chk_linfo', this)">${txtLinfo}</span></div></div>`);
+    }
+    if (isChk('chk-liquido')) {
+      const v = document.getElementById('sel-liquido-qtd')?.value || 'nenhum';
+      let txtLiquido = "Não há evidências sonográficas de líquido livre abdominal.";
+      if (v === 'discreta') txtLiquido = "Nota-se discreta quantidade de conteúdo anecogênico livre disperso pela cavidade abdominal.";
+      if (v === 'moderada') txtLiquido = "Nota-se moderada quantidade de conteúdo anecogênico livre disperso pela cavidade abdominal.";
+      if (v === 'acentuada') txtLiquido = "Nota-se acentuada quantidade de conteúdo anecogênico livre disperso pela cavidade abdominal.";
+      const txtLiqFinal = EstadoApp.textosEditadosManualmente['chk_liquido'] || txtLiquido;
+      blocosHTML.push(`<div class="general-phrase-item" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('chk_liquido', this)">${txtLiqFinal}</div>`);
+    }
+    if (isChk('chk-vasos')) {
+      const txtVasos = EstadoApp.textosEditadosManualmente['chk_vasos'] || "Não há evidências sonográficas de alterações nas porções visibilizadas dos grandes vasos abdominais.";
+      blocosHTML.push(`<div class="general-phrase-item" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('chk_vasos', this)">${txtVasos}</div>`);
+    }
+    if (EstadoApp.photos.length > 0 && typeof GerenciadorGaleria !== 'undefined' && typeof GerenciadorGaleria.gerarBlocosHTML === 'function') {
+      blocosHTML.push(...GerenciadorGaleria.gerarBlocosHTML());
+    }
+    if (isChk('chk-qualidade')) {
+      const txtQual = EstadoApp.textosEditadosManualmente['chk_qualidade'] || "Qualidade técnica do exame pode ser prejudicada devido padrão respiratório / agitação corporal do paciente.";
+      blocosHTML.push(`<div class="general-phrase-item" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('chk_qualidade', this)">${txtQual}</div>`);
+    }
+    if (isChk('chk-valor')) {
+      const txtValor = EstadoApp.textosEditadosManualmente['chk_valor'] || "O valor preditivo de qualquer exame de diagnóstico por imagem depende da análise conjunta dos dados clínicos e demais exames do paciente. O laudo fica reservado somente para o ato do exame.";
+      blocosHTML.push(`<div class="general-phrase-item" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('chk_valor', this)">${txtValor}</div>`);
+    }
+
+    const txtAssinatura1 = EstadoApp.textosEditadosManualmente['sig_nome'] || "Dra. Célia Carolina";
+    const txtAssinatura2 = EstadoApp.textosEditadosManualmente['sig_crmv'] || "CRMV 54149";
+    blocosHTML.push(`<div class="signature-container"><div class="signature-line"></div><div class="text-xs font-bold" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('sig_nome', this)">${txtAssinatura1}</div><div class="text-[10px] text-slate-500" contenteditable="true" spellcheck="false" onblur="AppInterface.salvarEdicaoManualTexto('sig_crmv', this)">${txtAssinatura2}</div></div>`);
+
+    let paginas = [];
+    function criarNovaPaginaA4() {
+      const pageElem = document.createElement('div');
+      pageElem.className = 'page-a4';
+      pageElem.innerHTML = `<div class="page-content"></div><div class="a4-footer"><span class="page-num"></span></div>`;
+      container.appendChild(pageElem);
+      paginas.push(pageElem);
+      return pageElem.querySelector('.page-content');
+    }
+
+    let currentContent = criarNovaPaginaA4();
+    blocosHTML.forEach(htmlBloco => {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = htmlBloco;
+      const elem = tempDiv.firstElementChild;
+      currentContent.appendChild(elem);
+      if (currentContent.scrollHeight > currentContent.clientHeight) {
+        currentContent.removeChild(elem);
+        currentContent = criarNovaPaginaA4();
+        currentContent.appendChild(elem);
+      }
+    });
+
+    const totalPaginas = paginas.length;
+    paginas.forEach((pageElem, idx) => {
+      const pageNumSpan = pageElem.querySelector('.page-num');
+      if (pageNumSpan) pageNumSpan.textContent = `Página ${idx + 1} de ${totalPaginas}`;
+    });
+
+    initIcons();
+    ControleZoom.aplicarEscala();
+  }
+};
+
+async function salvarLaudoAtualNaGaleria() {
+  const val = id => document.getElementById(id)?.value || '';
+  const paciente = val('p-paciente') || 'Paciente';
+  const prontuario = val('p-idAnimal') || '---';
+  const especie = val('p-especie') || '';
+  const raca = val('p-raca') || '';
+  const tutor = val('p-responsavel') || '';
+  const clinica = val('p-clinica') || '';
+  const paginasA4 = document.querySelectorAll('.page-a4');
+  let conteudoHtml = '';
+  let resumoTexto = '';
+  if (paginasA4.length > 0) {
+    paginasA4.forEach(pagina => { conteudoHtml += `<div class="page-a4 mb-6">${pagina.innerHTML}</div>`; resumoTexto += pagina.innerText + '\n'; });
+  } else {
+    const wrapper = document.getElementById('a4WrapperScale');
+    conteudoHtml = wrapper ? wrapper.innerHTML : '';
+    resumoTexto = wrapper ? wrapper.innerText : '';
+  }
+  const urlParams = new URLSearchParams(window.location.search);
+  const idUrl = urlParams.get('editar');
+  const dadosLaudo = { paciente, prontuario, especie, raca, tutor, clinica, dataExame: new Date().toISOString(), estado: 'Salvo', conteudoHtml, resumoTexto };
+  try {
+    const { collection, addDoc, doc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+    if (idUrl) await setDoc(doc(window.db, "laudos", idUrl), dadosLaudo, { merge: true });
+    else await addDoc(collection(window.db, "laudos"), dadosLaudo);
+    if (typeof AppInterface !== 'undefined' && typeof AppInterface.toggleStatusSalvo === 'function') AppInterface.toggleStatusSalvo(true);
+    alert('Laudo salvo e sincronizado na nuvem com sucesso!');
+  } catch (error) { console.error("Erro ao salvar no Firebase:", error); alert('Erro ao salvar na nuvem.'); }
+}
+
+async function carregarLaudoParaEdicao() {
+  const idUrl = new URLSearchParams(window.location.search).get('editar');
+  if (!idUrl) return;
+  try {
+    const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+    const docSnap = await getDoc(doc(window.db, "laudos", idUrl));
+    if (docSnap.exists()) {
+      const laudo = docSnap.data();
+      const setVal = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined) el.value = v; };
+      setVal('p-paciente', laudo.paciente); setVal('p-idAnimal', laudo.prontuario);
+      setVal('p-especie', laudo.especie); setVal('p-raca', laudo.raca);
+      setVal('p-responsavel', laudo.tutor); setVal('p-clinica', laudo.clinica);
+      AppInterface.toggleStatusSalvo(true);
+    }
+  } catch (error) { console.error("Erro ao carregar laudo:", error); }
+}
+
+async function sharePdf() {
+  const containerOriginal = document.getElementById('a4WrapperScale');
+  if (!containerOriginal) return;
+
+  const labelFile = document.getElementById('label-filename');
+  const filename = labelFile ? labelFile.innerText.trim() : 'Laudo_UltrasVet.pdf';
+
+  const estavaNoModoEscuro = document.documentElement.classList.contains('dark');
+  if (estavaNoModoEscuro) {
+    document.documentElement.classList.remove('dark');
+  }
+
+  const wrapperClone = containerOriginal.cloneNode(true);
+  
+  const containerTemp = document.createElement('div');
+  containerTemp.style.position = 'fixed';
+  containerTemp.style.left = '-9999px';
+  containerTemp.style.top = '0';
+  containerTemp.style.width = '794px';
+  containerTemp.style.backgroundColor = '#ffffff';
+  containerTemp.style.color = '#1e293b';
+  containerTemp.style.colorScheme = 'light';
+  containerTemp.style.zIndex = '999999';
+
+  wrapperClone.style.transform = 'none';
+  wrapperClone.style.width = '794px';
+  wrapperClone.style.maxWidth = '794px';
+  wrapperClone.style.margin = '0 auto';
+  wrapperClone.style.padding = '0';
+  wrapperClone.style.display = 'flex';
+  wrapperClone.style.flexDirection = 'column';
+  wrapperClone.style.alignItems = 'center';
+
+  const paginas = wrapperClone.querySelectorAll('.page-a4');
+  paginas.forEach(p => {
+    p.classList.remove('dark');
+    p.style.backgroundColor = '#ffffff';
+    p.style.color = '#1e293b';
+    p.style.boxShadow = 'none';
+    p.style.transform = 'none';
+    p.style.width = '210mm';
+    p.style.minWidth = '210mm';
+    p.style.height = '297mm';
+    p.style.minHeight = '297mm';
+    p.style.margin = '0 auto 10mm auto';
+    p.style.boxSizing = 'border-box';
+    p.style.colorScheme = 'light';
+  });
+
+  wrapperClone.querySelectorAll('.a4-section-title, .a4-organ-name').forEach(el => {
+    el.style.color = '#0F5A47';
+  });
+  wrapperClone.querySelectorAll('.no-print, .delete-photo-btn, button').forEach(el => el.remove());
+
+  containerTemp.appendChild(wrapperClone);
+  document.body.appendChild(containerTemp);
+
+  const opt = {
+    margin: 0,
+    filename: filename,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      backgroundColor: '#ffffff',
+      windowWidth: 794
+    },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true },
+    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+  };
+
+  try {
+    if (typeof html2pdf !== 'undefined') {
+      await html2pdf().set(opt).from(wrapperClone).save();
+    } else {
+      throw new Error('Biblioteca html2pdf não carregada');
+    }
+  } catch (err) {
+    console.warn("Alternando para impressão nativa do navegador:", err);
+    window.print();
+  } finally {
+    if (containerTemp.parentNode) {
+      document.body.removeChild(containerTemp);
+    }
+    if (estavaNoModoEscuro) {
+      document.documentElement.classList.add('dark');
+    }
+    if (typeof ControleZoom !== 'undefined' && ControleZoom.aplicarEscala) {
+      ControleZoom.aplicarEscala();
+    }
+  }
+}
+
+const ControleZoom = {
+  escala: 1.0, isDragging: false, startX: 0, startY: 0, scrollLeft: 0, scrollTop: 0, initialDistance: null,
+  
+  obterEscalaInicial: function() {
+    const larguraEcra = window.innerWidth;
+    if (larguraEcra <= 480) return 0.55;
+    if (larguraEcra <= 768) return 0.65;
+    if (larguraEcra <= 1024) return 0.80;
+    return 1.0;
+  },
+
+  ajustarZoomInicial: function() { this.escala = this.obterEscalaInicial(); this.aplicarEscala(); },
+  
+  aplicarEscala: function() {
+    const wrapper = document.getElementById('a4WrapperScale');
+    if (wrapper) wrapper.style.setProperty('--a4-scale', this.escala.toFixed(2));
+    this.atualizarBadge(Math.round(this.escala * 100) + '%');
+  },
+
+  zoomIn: function() { this.escala = Math.min(2.0, this.escala + 0.1); this.aplicarEscala(); },
+  zoomOut: function() { this.escala = Math.max(0.3, this.escala - 0.1); this.aplicarEscala(); },
+  resetZoom: function() { this.ajustarZoomInicial(); },
+  atualizarBadge: function(texto) { const el = document.getElementById('zoom-level-text'); if (el) el.textContent = texto; },
+  
+  initTouchAndDrag: function() {
+    const container = document.getElementById('previewContainer');
+    if (!container) return;
+
+    container.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.page-a4') && !e.target.closest('[contenteditable="true"]')) {
+        this.isDragging = true; this.startX = e.clientX; this.startY = e.clientY; this.scrollLeft = container.scrollLeft; this.scrollTop = container.scrollTop;
+      }
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!this.isDragging) return;
+      e.preventDefault();
+      container.scrollLeft = this.scrollLeft - (e.clientX - this.startX);
+      container.scrollTop = this.scrollTop - (e.clientY - this.startY);
+    });
+
+    window.addEventListener('mouseup', () => { this.isDragging = false; });
+
+    container.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        if (!e.target.closest('[contenteditable="true"]')) {
+          this.isDragging = true; this.startX = e.touches[0].clientX; this.startY = e.touches[0].clientY; this.scrollLeft = container.scrollLeft; this.scrollTop = container.scrollTop;
+        }
+      } else if (e.touches.length === 2) {
+        this.isDragging = false;
+        this.initialDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      }
+    }, { passive: false });
+
+    container.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 1 && this.isDragging) {
+        e.preventDefault();
+        container.scrollLeft = this.scrollLeft - (e.touches[0].clientX - this.startX);
+        container.scrollTop = this.scrollTop - (e.touches[0].clientY - this.startY);
+      } else if (e.touches.length === 2 && this.initialDistance !== null) {
+        e.preventDefault();
+        const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        const factor = currentDistance / this.initialDistance;
+        this.initialDistance = currentDistance;
+        this.escala = Math.max(0.3, Math.min(2.0, this.escala * factor));
+        this.aplicarEscala();
+      }
+    }, { passive: false });
+
+    container.addEventListener('touchend', (e) => {
+      if (e.touches.length < 2) this.initialDistance = null;
+      if (e.touches.length === 0) this.isDragging = false;
+    });
+  }
+};
+
+window.onload = async function() {
+  const savedTheme = localStorage.getItem('ultrasvet_theme');
+  if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.documentElement.classList.add('dark');
+  } else { document.documentElement.classList.remove('dark'); }
+
+  const selectPorte = document.getElementById('p-porte');
+  if (selectPorte) {
+    selectPorte.addEventListener('change', () => {
+      AppInterface.handlePorteChange();
+    });
+  }
+
+  const selectEspecie = document.getElementById('p-especie');
+  if (selectEspecie) {
+    selectEspecie.addEventListener('change', () => {
+      AppInterface.handleEspecieChange();
+    });
+  }
+
+  if (window.CONFIGURACAO_ORGAOS) {
+    Object.keys(CONFIGURACAO_ORGAOS).forEach(key => {
+      const item = EstadoApp.itensLaudoTemplate.find(i => i.id === key);
+      if (item && CONFIGURACAO_ORGAOS[key]) item.texto = CONFIGURACAO_ORGAOS[key].gerarTexto(CONFIGURACAO_ORGAOS[key].campos);
+    });
+  }
+
+  await carregarLaudoParaEdicao();
+  PainelConfigurador.inicializarSeletor();
+  if (typeof GerenciadorGaleria !== 'undefined' && GerenciadorGaleria.atualizarSidebar) GerenciadorGaleria.atualizarSidebar();
+  MotorLaudo.atualizarPaginasLaudo();
+  ControleZoom.ajustarZoomInicial();
+  ControleZoom.initTouchAndDrag();
+};
