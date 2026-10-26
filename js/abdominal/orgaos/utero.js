@@ -81,12 +81,14 @@ window.CONFIGURACAO_ORGAOS.utero = {
 
   obterLimiteReferencia: function() {
     const elPorte = document.getElementById('p-porte');
+    const elEspecie = document.getElementById('p-especie');
     const porteVal = elPorte ? elPorte.value : 'Cão P';
+    const especieVal = elEspecie ? elEspecie.value : 'Canino';
 
-    let limiteMax = 0.80;
+    let limiteMax = 0.80; // Cão P / Padrão
     if (porteVal === 'Cão M') limiteMax = 1.00;
     else if (porteVal === 'Cão G') limiteMax = 1.30;
-    else if (porteVal === 'Felino') limiteMax = 0.80;
+    else if (porteVal === 'Felino' || especieVal === 'Felino') limiteMax = 0.80;
 
     return { porte: porteVal, limite: limiteMax };
   },
