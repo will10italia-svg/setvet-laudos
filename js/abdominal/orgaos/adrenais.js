@@ -105,12 +105,10 @@ window.CONFIGURACAO_ORGAOS.adrenais = {
   onFieldChange: function(campo, valor) {
     this.campos[campo] = valor;
 
-    // Ajusta o lado do 2º nódulo por conveniência quando o 1º muda
     if (campo === 'noduloLado1') {
       this.campos.noduloLado2 = valor === 'esquerda' ? 'direita' : 'esquerda';
     }
 
-    // Se mudar a quantidade para plural, ativa automaticamente o segundo nódulo
     if (campo === 'noduloQtd') {
       this.campos.temSegundoNodulo = (valor === 'plural');
     }
@@ -145,16 +143,16 @@ window.CONFIGURACAO_ORGAOS.adrenais = {
     const textoCompleta = (especieStr + ' ' + porteStr).toLowerCase();
 
     if (textoCompleta.includes('felino') || textoCompleta.includes('gato')) {
-      return { label: 'Gato: até 0,40cm', limite: 0.40 };
+      return { label: 'Gato: até 0,45cm', limite: 0.40 };
     }
     if (textoCompleta.includes('cão m') || textoCompleta.includes('médio') || textoCompleta.includes('medio') || porteStr === 'm') {
-      return { label: 'Cão M: até 0,70cm', limite: 0.70 };
+      return { label: 'Cão M: até 0,68cm', limite: 0.68 };
     }
     if (textoCompleta.includes('cão g') || textoCompleta.includes('grande') || textoCompleta.includes('gigante') || porteStr === 'g') {
-      return { label: 'Cão G: até 0,90cm', limite: 0.90 };
+      return { label: 'Cão G: até 0,80cm', limite: 0.80 };
     }
 
-    // Padrão Cão Pequeno / Geral (~0,58cm)
+    // Padrão Cão Pequeno (P)
     return { label: 'Cão P: até 0,58cm', limite: 0.58 };
   },
 
@@ -165,7 +163,6 @@ window.CONFIGURACAO_ORGAOS.adrenais = {
     const valEsqCaudal = parseFloat(valEsqCaudalStr) || 0;
     const valDirCaudal = parseFloat(valDirCaudalStr) || 0;
     
-    // Obtém o limite dinâmico com base no paciente selecionado
     const ref = this.obterLimiteReferencia();
     const maxLimit = ref.limite;
 
